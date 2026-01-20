@@ -4,6 +4,7 @@
     "package": "com.uipg9.ascendancy.mixin",
     "compatibilityLevel": "JAVA_21",
     "mixins": [
+        "ServerPlayerMixin"
     ],
     "client": [
     ],

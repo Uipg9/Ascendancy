@@ -2,7 +2,7 @@
 
 > *A Vanilla+ RPG Prestige mod for Minecraft 1.21.11 (Fabric)*
 
-![Version](https://img.shields.io/badge/version-2.2.0-gold)
+![Version](https://img.shields.io/badge/version-2.3.0-gold)
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-brightgreen)
 ![Fabric](https://img.shields.io/badge/Fabric-0.18.4+-blue)
 
@@ -16,7 +16,7 @@ Ascendancy is a seamless prestige system that rewards you for simply playing the
 
 ## ♻️ The Cycle
 
-1. **⚔️ The Life** - Play Minecraft. Kill mobs, mine ores, smelt materials. Your actions fill the **Soul Bar**.
+1. **⚔️ The Life** - Play Minecraft. Kill mobs, mine ores, farm crops, explore! Your actions fill the **Soul Bar**.
 2. **✨ The Ascension** - When ready, choose ONE precious item to keep and trigger the ritual.
 3. **🌌 The Rebirth** - Descend from the heavens into a brand new world, far from your origins.
 4. **💪 The Evolution** - Spend **Prestige Points** on permanent upgrades that persist forever.
@@ -38,6 +38,8 @@ Earn **Soul XP** (independent from vanilla XP) through:
 | ⚫ Mine Ancient Debris | 15 |
 | 🔥 Smelt Ores | 2 |
 | 🍖 Smelt Food | 1 |
+| 🌾 Harvest Crops | 1 |
+| 👟 Walk 100 blocks | 1 |
 
 ### The HUD
 - **Vertical soul bar** on the left-center of screen
@@ -47,20 +49,22 @@ Earn **Soul XP** (independent from vanilla XP) through:
 
 ### The Rebirth Experience
 When you ascend:
+- ⚠️ **EVERYTHING IS WIPED** (inventory, ender chest, advancements)
+- 🎒 You keep **ONE chosen item** (more with Keeper upgrade!)
+- 📦 Old items preserved in a **Legacy Chest** at your old location
 - 🌅 World time resets to **dawn**
 - ☀️ Weather becomes **clear**
 - 🌌 You descend from the **sky** with protective effects
 - 👁️ Brief **blindness** fades to reveal your new world
 - 🪶 **Slow Falling** + **Resistance** keep you safe
 - ✨ **Regeneration** and **Night Vision** welcome you
-- 📦 Your old items are preserved in a **Legacy Chest**
 
 ### Permanent Upgrades
 | Upgrade | Effect | Description |
 |---------|--------|-------------|
 | 💜 **Vitality** | +2 Hearts | More health to survive |
 | ⛏️ **Haste** | +10% Mining Speed | Break blocks faster |
-| 👟 **Swiftness** | +5% Movement Speed | Run faster |
+| 👟 **Swiftness** | +5% Movement Speed | Run faster (more walking XP!) |
 | 🦾 **Titan's Reach** | +1 Block Reach | Interact from farther |
 | 🍀 **Fortune's Favor** | +1 Luck | Better loot |
 | ⚔️ **Warrior's Might** | +1 Attack Damage | Hit harder |
@@ -83,7 +87,7 @@ When you ascend:
 
 1. Install **Fabric Loader 0.18.4+** for Minecraft 1.21.11
 2. Install **Fabric API 0.141.1+**
-3. Drop `ascendancy-2.2.0.jar` into your `mods` folder
+3. Drop `ascendancy-2.3.0.jar` into your `mods` folder
 4. Launch and enjoy!
 
 ---
@@ -108,6 +112,13 @@ The built jar will be in `build/libs/`.
 ---
 
 ## 📜 Changelog
+
+### v2.3.0 - The Journey Update
+- 🌾 **Crop Harvesting**: Earn Soul XP from harvesting mature crops!
+- 👟 **Walking XP**: Earn 1 Soul XP for every 100 blocks walked!
+- 📖 **Fixed Guide**: Corrected all misleading info about inventory/ascension
+- 🔧 **Documentation**: Guide now accurately describes the rebirth experience
+- ✨ **More Polish**: Updated welcome messages with all XP sources
 
 ### v2.2.0 - The Soul Harvester Update
 - ✨ **New Soul XP Sources**: Earn Soul XP from mining ores and smelting items!

@@ -17,21 +17,27 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 /**
  * Ascendancy Mod - A Vanilla+ RPG Prestige System
- * Version 2.2 - The Soul Harvester Update
+ * Version 2.3 - The Journey Update
  * 
  * Core loop: Play → Gather Soul XP → Ascend → Reset → Get Permanent Upgrades
  * 
  * SOUL XP SOURCES (Independent from vanilla XP!):
  * - Killing mobs (monsters, animals, bosses)
  * - Mining valuable ores
- * - Smelting items (via networking events)
- * - Crafting (future)
+ * - Smelting items
+ * - Harvesting crops
+ * - Walking/exploring
  * 
  * INFINITE PROGRESSION:
  * - No max upgrade level - just increasing costs
@@ -74,6 +80,17 @@ public class AscendancyMod implements ModInitializer {
     public static final int SOUL_XP_SMELT_FOOD = 1;
     public static final int SOUL_XP_SMELT_OTHER = 1;
     
+    // Soul XP from crops
+    public static final int SOUL_XP_CROP = 1;
+    
+    // Soul XP from walking
+    public static final double WALK_DISTANCE_PER_XP = 100.0; // 100 blocks = 1 Soul XP
+    public static final int SOUL_XP_WALK = 1;
+    
+    // Track player walking distance
+    private static final Map<UUID, Double> playerWalkDistance = new HashMap<>();
+    private static final Map<UUID, BlockPos> playerLastPos = new HashMap<>();
+    
     // ==================== HELPER METHODS ====================
     
     public static int getMaxSoulXP(int ascensionCount) {
@@ -95,9 +112,17 @@ public class AscendancyMod implements ModInitializer {
         return 1.0f;
     }
     
+    /**
+     * Reset walking distance for a player (called on ascension)
+     */
+    public static void resetWalkingDistance(UUID playerId) {
+        playerWalkDistance.remove(playerId);
+        playerLastPos.remove(playerId);
+    }
+    
     @Override
     public void onInitialize() {
-        LOGGER.info("§6✦ Ascendancy v2.2 initializing... Your soul awaits. ✦");
+        LOGGER.info("§6✦ Ascendancy v2.3 initializing... Your soul awaits. ✦");
         
         AscendancyAttachments.register();
         AscendancyNetworking.registerServerPackets();
@@ -107,6 +132,10 @@ public class AscendancyMod implements ModInitializer {
             ServerPlayer player = handler.getPlayer();
             AttributeHandler.applyUpgrades(player);
             
+            // Initialize walking tracking
+            playerLastPos.put(player.getUUID(), player.blockPosition());
+            playerWalkDistance.put(player.getUUID(), 0.0);
+            
             if (PlayerDataManager.getAscensionCount(player) == 0 && 
                 PlayerDataManager.getSoulXP(player) == 0) {
                 player.sendSystemMessage(Component.literal("§6§l✦ Welcome to Ascendancy! ✦"));
@@ -114,10 +143,19 @@ public class AscendancyMod implements ModInitializer {
                 player.sendSystemMessage(Component.literal("§7  • §cSlaying monsters §7and creatures"));
                 player.sendSystemMessage(Component.literal("§7  • §bMining precious ores"));
                 player.sendSystemMessage(Component.literal("§7  • §6Smelting materials"));
+                player.sendSystemMessage(Component.literal("§7  • §aHarvesting crops"));
+                player.sendSystemMessage(Component.literal("§7  • §dJust walking around!"));
                 player.sendSystemMessage(Component.literal("§e→ Press §6[P]§e to open the Ascension menu!"));
             }
             
             AscendancyNetworking.syncToClient(player);
+        });
+        
+        // Player disconnect - cleanup
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            UUID playerId = handler.getPlayer().getUUID();
+            playerLastPos.remove(playerId);
+            playerWalkDistance.remove(playerId);
         });
         
         // Respawn - reapply upgrades
@@ -134,7 +172,7 @@ public class AscendancyMod implements ModInitializer {
             }
         });
         
-        // ORE MINING - Soul XP from mining
+        // ORE MINING & CROP HARVESTING - Soul XP from blocks
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
             if (player instanceof ServerPlayer serverPlayer && !world.isClientSide()) {
                 onBlockMined(serverPlayer, state, pos);
@@ -142,6 +180,41 @@ public class AscendancyMod implements ModInitializer {
         });
         
         LOGGER.info("§a✦ Ascendancy initialized successfully! ✦");
+    }
+    
+    /**
+     * Call this every server tick from a mixin or event to track walking
+     */
+    public static void tickPlayerMovement(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        BlockPos currentPos = player.blockPosition();
+        BlockPos lastPos = playerLastPos.get(playerId);
+        
+        if (lastPos == null) {
+            playerLastPos.put(playerId, currentPos);
+            playerWalkDistance.put(playerId, 0.0);
+            return;
+        }
+        
+        // Calculate horizontal distance (ignore Y to not reward jumping/falling)
+        double dx = currentPos.getX() - lastPos.getX();
+        double dz = currentPos.getZ() - lastPos.getZ();
+        double distance = Math.sqrt(dx * dx + dz * dz);
+        
+        // Only count if actually moving and on ground
+        if (distance > 0.1 && distance < 10 && player.onGround()) {
+            double totalDistance = playerWalkDistance.getOrDefault(playerId, 0.0) + distance;
+            
+            // Award XP for every 100 blocks walked
+            while (totalDistance >= WALK_DISTANCE_PER_XP) {
+                awardSoulXPStatic(player, SOUL_XP_WALK, "§d👟");
+                totalDistance -= WALK_DISTANCE_PER_XP;
+            }
+            
+            playerWalkDistance.put(playerId, totalDistance);
+        }
+        
+        playerLastPos.put(playerId, currentPos);
     }
     
     /**
@@ -166,13 +239,14 @@ public class AscendancyMod implements ModInitializer {
     }
     
     /**
-     * Handle block mining - Award Soul XP for ores
+     * Handle block mining - Award Soul XP for ores and crops
      */
     private void onBlockMined(ServerPlayer player, BlockState state, BlockPos pos) {
         Block block = state.getBlock();
         String path = BuiltInRegistries.BLOCK.getKey(block).getPath();
         
         int baseSoulXP = 0;
+        String icon = "§b⛏";
         
         // Check for ores
         if (path.contains("coal_ore")) baseSoulXP = SOUL_XP_COAL;
@@ -185,9 +259,23 @@ public class AscendancyMod implements ModInitializer {
         else if (path.contains("emerald_ore")) baseSoulXP = SOUL_XP_EMERALD;
         else if (path.contains("ancient_debris")) baseSoulXP = SOUL_XP_ANCIENT_DEBRIS;
         else if (path.contains("nether_quartz_ore") || path.contains("quartz_ore")) baseSoulXP = SOUL_XP_QUARTZ;
+        // Check for mature crops
+        else if (block instanceof CropBlock cropBlock) {
+            if (cropBlock.isMaxAge(state)) {
+                baseSoulXP = SOUL_XP_CROP;
+                icon = "§a🌾";
+            }
+        }
+        // Check for other harvestable crops by name
+        else if (path.equals("wheat") || path.equals("carrots") || path.equals("potatoes") ||
+                 path.equals("beetroots") || path.equals("melon") || path.equals("pumpkin") ||
+                 path.equals("cocoa") || path.equals("sweet_berry_bush") || path.equals("nether_wart")) {
+            baseSoulXP = SOUL_XP_CROP;
+            icon = "§a🌾";
+        }
         
         if (baseSoulXP > 0) {
-            awardSoulXP(player, baseSoulXP, "§b⛏");
+            awardSoulXP(player, baseSoulXP, icon);
         }
     }
     
