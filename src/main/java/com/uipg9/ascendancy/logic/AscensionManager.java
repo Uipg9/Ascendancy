@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.tags.StructureTags;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -183,6 +184,7 @@ public class AscensionManager {
     /**
      * Calculate a village spawn location for the mysterious awakening
      * Player spawns on the ground in a new location far away
+     * Attempts to find an actual village structure!
      */
     private static BlockPos calculateVillageSpawnLocation(ServerLevel level, BlockPos oldPos) {
         int randomZ = level.random.nextInt(RANDOM_Z_RANGE * 2) - RANDOM_Z_RANGE;
@@ -209,18 +211,43 @@ public class AscensionManager {
             targetZ = randomZ;
         }
         
-        // Ground level spawn - wake up on the surface
-        // First, ensure the chunk is loaded for proper heightmap
-        int groundY = level.getHeight(Heightmap.Types.WORLD_SURFACE, targetX, targetZ);
+        BlockPos basePos = new BlockPos(targetX, 64, targetZ);
         
-        // Safety checks for spawn height
-        // If heightmap returns something unreasonable (< 60), use a safe default
-        if (groundY < 60) {
-            groundY = 64; // Sea level as safe fallback
+        // Try to find a village near the target location using structure tags
+        BlockPos villagePos = level.findNearestMapStructure(
+            StructureTags.VILLAGE,
+            basePos,
+            100, // Search radius in chunks (100 = 1600 blocks)
+            false
+        );
+        
+        BlockPos spawnPos;
+        if (villagePos != null) {
+            // Found a village! Spawn there
+            int villageX = villagePos.getX();
+            int villageZ = villagePos.getZ();
+            AscendancyMod.LOGGER.info("Found village near target at X={}, Z={}", villageX, villageZ);
+            
+            // Get ground height at village location
+            int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, villageX, villageZ);
+            spawnPos = new BlockPos(villageX, Math.max(groundY, 64), villageZ);
+        } else {
+            // No village found, use safe ground spawn
+            AscendancyMod.LOGGER.info("No village found, using safe ground spawn at X={}, Z={}", targetX, targetZ);
+            
+            // Force load the chunk to get accurate heightmap
+            level.getChunk(targetX >> 4, targetZ >> 4);
+            int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, targetX, targetZ);
+            
+            // Safety checks for spawn height
+            if (groundY < 60) {
+                groundY = 64; // Sea level as safe fallback
+            }
+            
+            spawnPos = new BlockPos(targetX, groundY, targetZ);
         }
         
         // Make sure we're not spawning inside a block - find air
-        BlockPos spawnPos = new BlockPos(targetX, groundY, targetZ);
         int searchUp = 0;
         while (!level.getBlockState(spawnPos).isAir() && searchUp < 50) {
             spawnPos = spawnPos.above();

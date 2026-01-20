@@ -20,6 +20,7 @@ import java.util.List;
 /**
  * Item selection screen shown before ascending.
  * Player chooses ONE item/stack to keep (amount based on upgrade level).
+ * Uses invisible Button widgets for click detection (1.21.11 compatible).
  */
 @Environment(EnvType.CLIENT)
 public class ItemSelectionScreen extends Screen {
@@ -59,6 +60,25 @@ public class ItemSelectionScreen extends Screen {
             if (!stack.isEmpty()) {
                 slots.add(new SlotInfo(i, stack.copy()));
             }
+        }
+        
+        // Create invisible buttons for each item slot (1.21.11 compatible click detection)
+        int gridX = panelX + 10;
+        int gridY = panelY + 45;
+        
+        for (int i = 0; i < slots.size(); i++) {
+            int row = i / SLOTS_PER_ROW;
+            int col = i % SLOTS_PER_ROW;
+            int x = gridX + col * SLOT_SIZE;
+            int y = gridY + row * SLOT_SIZE;
+            
+            final int slotIndex = i;
+            // Invisible button - we'll render the slot visually ourselves
+            Button slotBtn = Button.builder(Component.empty(), btn -> {
+                selectedSlot = slots.get(slotIndex).inventorySlot;
+                playClickSound();
+            }).bounds(x, y, SLOT_SIZE - 1, SLOT_SIZE - 1).build();
+            this.addRenderableWidget(slotBtn);
         }
         
         // Confirm button
@@ -107,11 +127,9 @@ public class ItemSelectionScreen extends Screen {
             Component.literal("§7You may keep up to §e" + keepAmount + "§7 of one item"),
             this.width / 2, panelY + 25, 0xFFAAAAAA);
         
-        // Draw item grid
+        // Draw item grid visuals (buttons are invisible, we render items on top)
         int gridX = panelX + 10;
         int gridY = panelY + 45;
-        int slotsWide = Math.min(SLOTS_PER_ROW, slots.size());
-        int gridWidth = slotsWide * SLOT_SIZE;
         
         for (int i = 0; i < slots.size(); i++) {
             int row = i / SLOTS_PER_ROW;
@@ -155,33 +173,8 @@ public class ItemSelectionScreen extends Screen {
                 this.width / 2, panelY + 130, 0xFF666666);
         }
         
+        // Render widgets (buttons) AFTER our custom content
         super.render(graphics, mouseX, mouseY, delta);
-    }
-    
-    // Handle mouse clicks on the item grid
-    // NOTE: In 1.21.11, mouseClicked signature changed - we use a simpler approach
-    // by letting render() detect clicks during frame
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            int gridX = panelX + 10;
-            int gridY = panelY + 45;
-            
-            for (int i = 0; i < slots.size(); i++) {
-                int row = i / SLOTS_PER_ROW;
-                int col = i % SLOTS_PER_ROW;
-                int x = gridX + col * SLOT_SIZE;
-                int y = gridY + row * SLOT_SIZE;
-                
-                if (mouseX >= x && mouseX < x + SLOT_SIZE && mouseY >= y && mouseY < y + SLOT_SIZE) {
-                    selectedSlot = slots.get(i).inventorySlot;
-                    playClickSound();
-                    return true;
-                }
-            }
-        }
-        // Let the parent handle button clicks - don't block them
-        // In 1.21.11, we just return false to allow widgets to handle
-        return false;
     }
     
     private SlotInfo findSlot(int inventorySlot) {

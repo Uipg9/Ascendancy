@@ -41,6 +41,9 @@ public class AscensionScreen extends Screen {
     
     // Animation
     private float animProgress = 0;
+    private boolean animationComplete = false;
+    private long animationStartTime = 0;
+    private static final long ANIMATION_DELAY_MS = 500; // 0.5 seconds before buttons enabled
     
     // Category tabs
     private int selectedCategory = 0;
@@ -54,6 +57,11 @@ public class AscensionScreen extends Screen {
     protected void init() {
         super.init();
         
+        // Track animation start time if not already set
+        if (animationStartTime == 0) {
+            animationStartTime = System.currentTimeMillis();
+        }
+        
         centerX = this.width / 2;
         centerY = this.height / 2;
         
@@ -61,13 +69,15 @@ public class AscensionScreen extends Screen {
         int panelY = centerY - panelHeight / 2;
         
         // Guide button (top-right, book icon)
-        this.addRenderableWidget(Button.builder(
+        Button guideBtn = Button.builder(
             Component.literal("📖 Guide"),
             button -> {
                 playClickSound();
                 this.minecraft.setScreen(new GuideScreen());
             }
-        ).bounds(panelX + panelWidth - 70, panelY + 8, 60, 16).build());
+        ).bounds(panelX + panelWidth - 70, panelY + 8, 60, 16).build();
+        guideBtn.active = animationComplete; // Disabled during animation
+        this.addRenderableWidget(guideBtn);
         
         // Category tabs
         int tabX = panelX + 10;
@@ -81,6 +91,7 @@ public class AscensionScreen extends Screen {
                     rebuildWidgets();
                 }
             ).bounds(tabX + (i * 75), panelY + 45, 70, 18).build();
+            tabBtn.active = animationComplete; // Disabled during animation
             this.addRenderableWidget(tabBtn);
         }
         
@@ -117,13 +128,15 @@ public class AscensionScreen extends Screen {
         
         // Ascend button (bottom, only if ready) - NOW OPENS ITEM SELECTION
         if (AscendancyClient.canAscend()) {
-            this.addRenderableWidget(Button.builder(
+            Button ascendBtn = Button.builder(
                 Component.literal("✦ ASCEND ✦").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
                 button -> {
                     playAscendSound();
                     this.minecraft.setScreen(new ItemSelectionScreen());
                 }
-            ).bounds(centerX - 70, panelY + panelHeight - 40, 140, 28).build());
+            ).bounds(centerX - 70, panelY + panelHeight - 40, 140, 28).build();
+            ascendBtn.active = animationComplete; // Disabled during animation
+            this.addRenderableWidget(ascendBtn);
         }
     }
     
@@ -146,7 +159,8 @@ public class AscensionScreen extends Screen {
             }
         ).bounds(panelX + panelWidth - 80, y + 5, 65, 20).build();
         
-        button.active = canAfford;
+        // Only active if animation complete AND can afford
+        button.active = animationComplete && canAfford;
         this.addRenderableWidget(button);
     }
     
@@ -155,6 +169,21 @@ public class AscensionScreen extends Screen {
         // Animation
         animProgress = Math.min(1.0f, animProgress + delta * 0.1f);
         float ease = 1.0f - (float)Math.pow(1.0f - animProgress, 3);
+        
+        // Check if animation delay has passed
+        boolean wasAnimationComplete = animationComplete;
+        animationComplete = (System.currentTimeMillis() - animationStartTime) > ANIMATION_DELAY_MS;
+        
+        // Enable/disable all widgets based on animation state
+        if (!wasAnimationComplete && animationComplete) {
+            // Animation just finished - enable all widgets
+            for (var child : this.children()) {
+                if (child instanceof Button btn) {
+                    btn.active = true;
+                }
+            }
+            rebuildWidgets(); // Rebuild to apply correct active states based on affordability
+        }
         
         int panelX = centerX - panelWidth / 2;
         int panelY = centerY - panelHeight / 2;

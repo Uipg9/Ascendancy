@@ -2,7 +2,7 @@
 
 > *A Vanilla+ RPG Prestige mod for Minecraft 1.21.11 (Fabric)*
 
-![Version](https://img.shields.io/badge/version-2.4.1-gold)
+![Version](https://img.shields.io/badge/version-2.4.2-gold)
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-brightgreen)
 ![Fabric](https://img.shields.io/badge/Fabric-0.18.4+-blue)
 
@@ -86,7 +86,7 @@ When you ascend:
 
 1. Install **Fabric Loader 0.18.4+** for Minecraft 1.21.11
 2. Install **Fabric API 0.141.1+**
-3. Drop `ascendancy-2.4.1.jar` into your `mods` folder
+3. Drop `ascendancy-2.4.2.jar` into your `mods` folder
 4. Launch and enjoy!
 
 ---
@@ -111,6 +111,13 @@ The built jar will be in `build/libs/`.
 ---
 
 ## 📜 Changelog
+
+### v2.4.2 - Stability Patch
+- 🏘️ **Village Spawn Fixed**: Now actually finds and spawns you near villages!
+- 🖱️ **Item Selection Fixed**: Click detection completely rewritten using proper button widgets
+- ⏳ **Animation Polish**: Buttons disabled during menu open animation (0.5s delay)
+- 🛡️ **Safer Spawning**: Uses `MOTION_BLOCKING_NO_LEAVES` heightmap for proper ground detection
+- 🔧 **1.21.11 Compatibility**: Fixed API compatibility issues with mouse input system
 
 ### v2.4.1 - Bugfix Patch
 - 🐛 **Fixed Spawn Location**: No longer spawn in void/underground - proper surface detection
