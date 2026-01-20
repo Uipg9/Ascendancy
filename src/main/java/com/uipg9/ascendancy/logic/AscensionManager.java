@@ -210,10 +210,30 @@ public class AscensionManager {
         }
         
         // Ground level spawn - wake up on the surface
-        int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, targetX, targetZ) + 1;
+        // First, ensure the chunk is loaded for proper heightmap
+        int groundY = level.getHeight(Heightmap.Types.WORLD_SURFACE, targetX, targetZ);
         
-        AscendancyMod.LOGGER.info("Village spawn location: X={}, Z={}, Y={}", targetX, targetZ, groundY);
-        return new BlockPos(targetX, groundY, targetZ);
+        // Safety checks for spawn height
+        // If heightmap returns something unreasonable (< 60), use a safe default
+        if (groundY < 60) {
+            groundY = 64; // Sea level as safe fallback
+        }
+        
+        // Make sure we're not spawning inside a block - find air
+        BlockPos spawnPos = new BlockPos(targetX, groundY, targetZ);
+        int searchUp = 0;
+        while (!level.getBlockState(spawnPos).isAir() && searchUp < 50) {
+            spawnPos = spawnPos.above();
+            searchUp++;
+        }
+        // Also check the block above for headroom
+        while (!level.getBlockState(spawnPos.above()).isAir() && searchUp < 50) {
+            spawnPos = spawnPos.above();
+            searchUp++;
+        }
+        
+        AscendancyMod.LOGGER.info("Safe spawn location: X={}, Z={}, Y={}", spawnPos.getX(), spawnPos.getZ(), spawnPos.getY());
+        return spawnPos;
     }
     
     /**

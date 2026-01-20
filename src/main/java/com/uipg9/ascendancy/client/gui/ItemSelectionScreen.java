@@ -159,6 +159,8 @@ public class ItemSelectionScreen extends Screen {
     }
     
     // Handle mouse clicks on the item grid
+    // NOTE: In 1.21.11, mouseClicked signature changed - we use a simpler approach
+    // by letting render() detect clicks during frame
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
             int gridX = panelX + 10;
@@ -177,7 +179,8 @@ public class ItemSelectionScreen extends Screen {
                 }
             }
         }
-        // Call the parent method without passing arguments since it's a screen method
+        // Let the parent handle button clicks - don't block them
+        // In 1.21.11, we just return false to allow widgets to handle
         return false;
     }
     
