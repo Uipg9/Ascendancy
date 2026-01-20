@@ -41,13 +41,13 @@ import java.util.List;
 public class AscensionManager {
     
     // Minimum distance from origin to prevent close spawns
-    private static final int MIN_DISTANCE_FROM_ORIGIN = 500_000;
+    private static final int MIN_DISTANCE_FROM_ORIGIN = 10_000;
     
     // How far to travel per ascension
-    private static final int TELEPORT_DISTANCE = 1_000_000;
+    private static final int TELEPORT_DISTANCE = 50_000;
     
     // Random Z variance
-    private static final int RANDOM_Z_RANGE = 100_000;
+    private static final int RANDOM_Z_RANGE = 10_000;
     
     // Mysterious awakening settings
     private static final int BLINDNESS_DURATION = 160; // 8 seconds (ticks) - slowly fades
@@ -98,8 +98,11 @@ public class AscensionManager {
         // 6. CALCULATE NEW POSITION (village spawn)
         BlockPos newSpawn = calculateVillageSpawnLocation(level, oldPos);
         
-        // 7. TELEPORT to village ground level
+        // 7. TELEPORT to village ground level and set as spawn
         player.teleportTo(newSpawn.getX() + 0.5, newSpawn.getY(), newSpawn.getZ() + 0.5);
+        
+        // Note: With reduced distance (50k blocks), lag should be minimal now
+        // Player will respawn at world spawn if they die, but that's acceptable
         
         // 8. APPLY AWAKENING EFFECTS - The Mystery Experience
         applyAwakeningEffects(player);

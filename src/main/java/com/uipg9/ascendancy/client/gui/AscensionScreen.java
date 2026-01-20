@@ -153,8 +153,8 @@ public class AscensionScreen extends Screen {
                 if (canAfford) {
                     playPurchaseSound();
                     AscendancyNetworking.sendPurchaseRequest(upgradeType);
-                    // Delay rebuild to let server sync
-                    Minecraft.getInstance().execute(() -> this.rebuildWidgets());
+                    // Rebuild immediately for instant price updates
+                    this.rebuildWidgets();
                 }
             }
         ).bounds(panelX + panelWidth - 80, y + 5, 65, 20).build();
