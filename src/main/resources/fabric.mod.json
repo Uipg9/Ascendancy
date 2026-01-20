@@ -1,0 +1,37 @@
+{
+    "schemaVersion": 1,
+    "id": "ascendancy",
+    "version": "${version}",
+    "name": "Ascendancy",
+    "description": "A seamless prestige system that rewards players for playing the game. Ascend, reset, and evolve with permanent upgrades.",
+    "authors": [
+        "uipg9"
+    ],
+    "contact": {
+        "homepage": "https://github.com/uipg9/ascendancy",
+        "sources": "https://github.com/uipg9/ascendancy"
+    },
+    "license": "MIT",
+    "icon": "assets/ascendancy/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "com.uipg9.ascendancy.AscendancyMod"
+        ],
+        "client": [
+            "com.uipg9.ascendancy.client.AscendancyClient"
+        ]
+    },
+    "mixins": [
+        "ascendancy.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=${loader_version}",
+        "minecraft": "~${minecraft_version}",
+        "java": ">=21",
+        "fabric-api": "*"
+    },
+    "suggests": {
+        "modmenu": "*"
+    }
+}
