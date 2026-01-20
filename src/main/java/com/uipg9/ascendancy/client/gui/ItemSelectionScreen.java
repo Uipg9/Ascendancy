@@ -127,7 +127,7 @@ public class ItemSelectionScreen extends Screen {
             Component.literal("§7You may keep up to §e" + keepAmount + "§7 of one item"),
             this.width / 2, panelY + 25, 0xFFAAAAAA);
         
-        // Draw item grid visuals (buttons are invisible, we render items on top)
+        // Draw slot backgrounds first
         int gridX = panelX + 10;
         int gridY = panelY + 45;
         
@@ -147,10 +147,6 @@ public class ItemSelectionScreen extends Screen {
             // Border
             int borderColor = isSelected ? COLOR_SELECTED : COLOR_SLOT_BORDER;
             graphics.renderOutline(x, y, SLOT_SIZE - 1, SLOT_SIZE - 1, borderColor);
-            
-            // Item
-            graphics.renderItem(slot.stack, x + 1, y + 1);
-            graphics.renderItemDecorations(this.font, slot.stack, x + 1, y + 1);
         }
         
         // Selected item info
@@ -173,8 +169,20 @@ public class ItemSelectionScreen extends Screen {
                 this.width / 2, panelY + 130, 0xFF666666);
         }
         
-        // Render widgets (buttons) AFTER our custom content
+        // Render widgets (invisible buttons)
         super.render(graphics, mouseX, mouseY, delta);
+        
+        // NOW render items on top so they're visible
+        for (int i = 0; i < slots.size(); i++) {
+            int row = i / SLOTS_PER_ROW;
+            int col = i % SLOTS_PER_ROW;
+            int x = gridX + col * SLOT_SIZE;
+            int y = gridY + row * SLOT_SIZE;
+            
+            SlotInfo slot = slots.get(i);
+            graphics.renderItem(slot.stack, x + 1, y + 1);
+            graphics.renderItemDecorations(this.font, slot.stack, x + 1, y + 1);
+        }
     }
     
     private SlotInfo findSlot(int inventorySlot) {
