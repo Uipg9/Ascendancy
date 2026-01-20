@@ -12,24 +12,30 @@ import net.minecraft.util.Mth;
  * Renders the Soul Energy HUD element.
  * Uses Mojang Official Mappings for 1.21.11
  * 
- * Visual: A vertical progress bar in the bottom-right corner.
- * Behavior: Fades out when empty, glows gold when full.
+ * v2.2 - VERTICAL bar on the LEFT CENTER of the screen
+ * This position avoids conflicts with other mods that use top-left,
+ * and stays out of the way of sound captions on the right.
+ * 
+ * ALWAYS VISIBLE - shows player's ascension progress
  */
 @Environment(EnvType.CLIENT)
 public class AscensionHud {
     
-    // Bar dimensions
-    private static final int BAR_WIDTH = 8;
-    private static final int BAR_HEIGHT = 60;
-    private static final int MARGIN_RIGHT = 20;
-    private static final int MARGIN_BOTTOM = 80;
+    // Bar dimensions - VERTICAL orientation
+    private static final int BAR_WIDTH = 8;    // Thin bar
+    private static final int BAR_HEIGHT = 80;  // Tall bar
+    private static final int MARGIN_LEFT = 8;  // Slight margin from screen edge
     
     // Colors (ARGB)
-    private static final int COLOR_BACKGROUND = 0x80000000;      // Semi-transparent black
-    private static final int COLOR_BORDER = 0xFF333333;          // Dark gray border
-    private static final int COLOR_BAR_EMPTY = 0xFF1A1A1A;       // Very dark gray
+    private static final int COLOR_BACKGROUND = 0xDD000000;      // Almost opaque black
+    private static final int COLOR_BORDER = 0xFF555555;          // Medium gray border
+    private static final int COLOR_BORDER_GLOW = 0xFFAA8800;     // Gold border when ready
+    private static final int COLOR_BAR_EMPTY = 0xFF1A1A2E;       // Dark purple-ish
     private static final int COLOR_BAR_FILL = 0xFFFFD700;        // Gold
     private static final int COLOR_BAR_GLOW = 0xFFFFFF00;        // Bright yellow
+    private static final int COLOR_TEXT = 0xFFFFFFFF;            // White
+    private static final int COLOR_READY = 0xFF00FF00;           // Green
+    private static final int COLOR_GOLD_TEXT = 0xFFFFD700;       // Gold text
     
     // Animation state
     private static float smoothProgress = 0f;
@@ -42,32 +48,32 @@ public class AscensionHud {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.options.hideGui) return;
         
+        // Don't render while a screen is open (except inventory)
+        if (client.screen != null && !(client.screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen)) {
+            return;
+        }
+        
         float targetProgress = AscendancyClient.getSoulProgress();
         
         // Smooth animation
-        smoothProgress = Mth.lerp(0.1f, smoothProgress, targetProgress);
+        smoothProgress = Mth.lerp(0.15f, smoothProgress, targetProgress);
         
-        // Don't render if empty and not animating
-        if (smoothProgress < 0.001f && targetProgress < 0.001f) return;
+        // Update glow pulse
+        glowPulse += deltaTracker.getGameTimeDeltaTicks() * 0.1f;
         
-        // Calculate alpha based on progress (fade in as bar fills)
-        float alpha = Math.max(0.3f, smoothProgress);
-        
-        // Glow pulse when full
-        if (AscendancyClient.canAscend()) {
-            glowPulse += deltaTracker.getGameTimeDeltaTicks() * 0.1f;
-            alpha = 1.0f;
-        }
-        
-        int screenWidth = client.getWindow().getGuiScaledWidth();
+        // Position: LEFT CENTER of screen
         int screenHeight = client.getWindow().getGuiScaledHeight();
+        int x = MARGIN_LEFT;
+        int y = (screenHeight / 2) - (BAR_HEIGHT / 2);
         
-        // Position: bottom-right corner
-        int x = screenWidth - MARGIN_RIGHT - BAR_WIDTH;
-        int y = screenHeight - MARGIN_BOTTOM - BAR_HEIGHT;
+        // Draw the vertical soul bar (ALWAYS)
+        drawSoulBar(graphics, x, y, smoothProgress);
         
-        // Draw the soul bar
-        drawSoulBar(graphics, x, y, smoothProgress, alpha);
+        // Draw "SOUL" label above the bar (vertical)
+        drawLabel(graphics, client, x, y);
+        
+        // Draw percentage below the bar
+        drawPercentage(graphics, client, x, y);
         
         // Draw ready indicator when full
         if (AscendancyClient.canAscend()) {
@@ -76,26 +82,29 @@ public class AscensionHud {
     }
     
     /**
-     * Draw the vertical soul bar
+     * Draw the VERTICAL soul bar
+     * Fills from BOTTOM to TOP (like filling a container)
      */
-    private static void drawSoulBar(GuiGraphics graphics, int x, int y, float progress, float alpha) {
-        int alphaInt = (int)(alpha * 255) << 24;
+    private static void drawSoulBar(GuiGraphics graphics, int x, int y, float progress) {
+        int barX = x;
+        int barY = y;
         
-        // Background with alpha
-        int bgColor = (alphaInt & 0xFF000000) | (COLOR_BACKGROUND & 0x00FFFFFF);
-        graphics.fill(x - 1, y - 1, x + BAR_WIDTH + 1, y + BAR_HEIGHT + 1, bgColor);
+        // Background panel (slightly larger for padding)
+        graphics.fill(barX - 3, barY - 3, barX + BAR_WIDTH + 3, barY + BAR_HEIGHT + 3, COLOR_BACKGROUND);
         
-        // Border
-        int borderColor = (alphaInt & 0xFF000000) | (COLOR_BORDER & 0x00FFFFFF);
-        graphics.renderOutline(x - 1, y - 1, BAR_WIDTH + 2, BAR_HEIGHT + 2, borderColor);
+        // Border (glows gold when ready)
+        int borderColor = AscendancyClient.canAscend() ? 
+            lerpColor(COLOR_BORDER, COLOR_BORDER_GLOW, (float)(Math.sin(glowPulse) * 0.5 + 0.5)) : 
+            COLOR_BORDER;
+        graphics.renderOutline(barX - 3, barY - 3, BAR_WIDTH + 6, BAR_HEIGHT + 6, borderColor);
         
         // Empty bar background
-        graphics.fill(x, y, x + BAR_WIDTH, y + BAR_HEIGHT, COLOR_BAR_EMPTY);
+        graphics.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT, COLOR_BAR_EMPTY);
         
-        // Filled portion (from bottom up)
+        // Filled portion (from BOTTOM to TOP)
         int fillHeight = (int)(BAR_HEIGHT * progress);
         if (fillHeight > 0) {
-            int fillY = y + BAR_HEIGHT - fillHeight;
+            int fillStartY = barY + BAR_HEIGHT - fillHeight;
             
             // Glow effect when full
             int fillColor = COLOR_BAR_FILL;
@@ -104,29 +113,90 @@ public class AscensionHud {
                 fillColor = lerpColor(COLOR_BAR_FILL, COLOR_BAR_GLOW, pulse);
             }
             
-            graphics.fill(x, fillY, x + BAR_WIDTH, y + BAR_HEIGHT, fillColor);
+            graphics.fill(barX, fillStartY, barX + BAR_WIDTH, barY + BAR_HEIGHT, fillColor);
             
-            // Shine effect at the top of the fill
+            // Shine effect at the left edge of the fill
             int shineColor = 0x40FFFFFF;
-            graphics.fill(x, fillY, x + BAR_WIDTH, fillY + 2, shineColor);
+            graphics.fill(barX, fillStartY, barX + 2, barY + BAR_HEIGHT, shineColor);
+            
+            // Top edge highlight (where the liquid level is)
+            if (progress < 1.0f) {
+                graphics.fill(barX, fillStartY, barX + BAR_WIDTH, fillStartY + 1, 0xFFFFFFFF);
+            }
         }
+        
+        // Inner border for depth
+        graphics.renderOutline(barX - 1, barY - 1, BAR_WIDTH + 2, BAR_HEIGHT + 2, 0xFF333333);
+        
+        // Decorative corner marks
+        drawCornerMarks(graphics, barX - 3, barY - 3, BAR_WIDTH + 6, BAR_HEIGHT + 6);
+    }
+    
+    /**
+     * Draw decorative corner marks
+     */
+    private static void drawCornerMarks(GuiGraphics graphics, int x, int y, int width, int height) {
+        int cornerColor = 0xFFAA8800; // Gold
+        int cornerLength = 4;
+        
+        // Top-left
+        graphics.fill(x, y, x + cornerLength, y + 1, cornerColor);
+        graphics.fill(x, y, x + 1, y + cornerLength, cornerColor);
+        
+        // Top-right
+        graphics.fill(x + width - cornerLength, y, x + width, y + 1, cornerColor);
+        graphics.fill(x + width - 1, y, x + width, y + cornerLength, cornerColor);
+        
+        // Bottom-left
+        graphics.fill(x, y + height - 1, x + cornerLength, y + height, cornerColor);
+        graphics.fill(x, y + height - cornerLength, x + 1, y + height, cornerColor);
+        
+        // Bottom-right
+        graphics.fill(x + width - cornerLength, y + height - 1, x + width, y + height, cornerColor);
+        graphics.fill(x + width - 1, y + height - cornerLength, x + width, y + height, cornerColor);
+    }
+    
+    /**
+     * Draw the "SOUL" label above the bar
+     */
+    private static void drawLabel(GuiGraphics graphics, Minecraft client, int barX, int barY) {
+        String text = "✦";
+        int textWidth = client.font.width(text);
+        int textX = barX + (BAR_WIDTH / 2) - (textWidth / 2);
+        int textY = barY - 12;
+        
+        graphics.drawString(client.font, text, textX, textY, COLOR_GOLD_TEXT, true);
+    }
+    
+    /**
+     * Draw percentage below the bar
+     */
+    private static void drawPercentage(GuiGraphics graphics, Minecraft client, int barX, int barY) {
+        int percent = (int)(AscendancyClient.getSoulProgress() * 100);
+        String text = percent + "%";
+        int textWidth = client.font.width(text);
+        int textX = barX + (BAR_WIDTH / 2) - (textWidth / 2);
+        int textY = barY + BAR_HEIGHT + 5;
+        
+        int color = AscendancyClient.canAscend() ? COLOR_READY : COLOR_TEXT;
+        graphics.drawString(client.font, text, textX, textY, color, true);
     }
     
     /**
      * Draw indicator when ready to ascend
      */
     private static void drawReadyIndicator(GuiGraphics graphics, Minecraft client, int barX, int barY) {
-        String text = "⬆ P";
+        String text = "[P]";
         int textWidth = client.font.width(text);
         
         // Pulsing alpha
         float pulse = (float)(Math.sin(glowPulse * 2) * 0.3 + 0.7);
         int alpha = (int)(pulse * 255);
-        int color = (alpha << 24) | 0xFFD700;
+        int color = (alpha << 24) | 0x00FF00;
         
-        // Draw above the bar
+        // Draw below the percentage
         int textX = barX + (BAR_WIDTH / 2) - (textWidth / 2);
-        int textY = barY - 12;
+        int textY = barY + BAR_HEIGHT + 16;
         
         graphics.drawString(client.font, text, textX, textY, color, true);
     }

@@ -1,5 +1,6 @@
 package com.uipg9.ascendancy.data;
 
+import com.uipg9.ascendancy.AscendancyMod;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -10,16 +11,10 @@ public class PlayerDataManager {
     
     // ==================== DATA ACCESS ====================
     
-    /**
-     * Get the Ascendancy data for a player, creating default if not present.
-     */
     public static AscendancyData getData(ServerPlayer player) {
         return player.getAttachedOrCreate(AscendancyAttachments.ASCENDANCY_DATA);
     }
     
-    /**
-     * Set the Ascendancy data for a player.
-     */
     public static void setData(ServerPlayer player, AscendancyData data) {
         player.setAttached(AscendancyAttachments.ASCENDANCY_DATA, data);
     }
@@ -34,11 +29,6 @@ public class PlayerDataManager {
         setData(player, getData(player).withSoulXP(value));
     }
     
-    public static void addSoulXP(ServerPlayer player, int amount) {
-        AscendancyData data = getData(player);
-        setData(player, data.withSoulXP(data.soulXP() + amount));
-    }
-    
     // ==================== PRESTIGE POINTS ====================
     
     public static int getPrestigePoints(ServerPlayer player) {
@@ -51,7 +41,8 @@ public class PlayerDataManager {
     
     public static void addPrestigePoints(ServerPlayer player, int amount) {
         AscendancyData data = getData(player);
-        setData(player, data.withPrestigePoints(data.prestigePoints() + amount));
+        setData(player, data.withPrestigePoints(data.prestigePoints() + amount)
+                           .withTotalPrestigeEarned(data.totalPrestigeEarned() + amount));
     }
     
     public static boolean spendPrestigePoints(ServerPlayer player, int amount) {
@@ -63,15 +54,16 @@ public class PlayerDataManager {
         return false;
     }
     
+    // ==================== TOTAL PRESTIGE EARNED ====================
+    
+    public static int getTotalPrestigeEarned(ServerPlayer player) {
+        return getData(player).totalPrestigeEarned();
+    }
+    
     // ==================== ASCENSION COUNT ====================
     
     public static int getAscensionCount(ServerPlayer player) {
         return getData(player).ascensionCount();
-    }
-    
-    public static void incrementAscensionCount(ServerPlayer player) {
-        AscendancyData data = getData(player);
-        setData(player, data.withAscensionCount(data.ascensionCount() + 1));
     }
     
     // ==================== LAST KNOWN XP ====================
@@ -94,7 +86,7 @@ public class PlayerDataManager {
         setData(player, getData(player).withNotified(value));
     }
     
-    // ==================== UPGRADE LEVELS ====================
+    // ==================== ORIGINAL UPGRADES ====================
     
     public static int getHealthLevel(ServerPlayer player) {
         return getData(player).healthLevel();
@@ -128,24 +120,69 @@ public class PlayerDataManager {
         setData(player, getData(player).withMiningLevel(level));
     }
     
-    // ==================== MAX UPGRADE LEVEL ====================
+    // ==================== NEW UPGRADES ====================
     
-    public static final int MAX_UPGRADE_LEVEL = AscendancyData.MAX_UPGRADE_LEVEL;
+    public static int getLuckLevel(ServerPlayer player) {
+        return getData(player).luckLevel();
+    }
     
-    /**
-     * Calculate the cost to upgrade to the next level.
-     */
+    public static void setLuckLevel(ServerPlayer player, int level) {
+        setData(player, getData(player).withLuckLevel(level));
+    }
+    
+    public static int getDamageLevel(ServerPlayer player) {
+        return getData(player).damageLevel();
+    }
+    
+    public static void setDamageLevel(ServerPlayer player, int level) {
+        setData(player, getData(player).withDamageLevel(level));
+    }
+    
+    public static int getDefenseLevel(ServerPlayer player) {
+        return getData(player).defenseLevel();
+    }
+    
+    public static void setDefenseLevel(ServerPlayer player, int level) {
+        setData(player, getData(player).withDefenseLevel(level));
+    }
+    
+    public static int getExperienceLevel(ServerPlayer player) {
+        return getData(player).experienceLevel();
+    }
+    
+    public static void setExperienceLevel(ServerPlayer player, int level) {
+        setData(player, getData(player).withExperienceLevel(level));
+    }
+    
+    // ==================== V2.1 UPGRADES ====================
+    
+    public static int getKeeperLevel(ServerPlayer player) {
+        return getData(player).keeperLevel();
+    }
+    
+    public static void setKeeperLevel(ServerPlayer player, int level) {
+        setData(player, getData(player).withKeeperLevel(level));
+    }
+    
+    public static int getWisdomLevel(ServerPlayer player) {
+        return getData(player).wisdomLevel();
+    }
+    
+    public static void setWisdomLevel(ServerPlayer player, int level) {
+        setData(player, getData(player).withWisdomLevel(level));
+    }
+    
+    // ==================== UPGRADE COST (INFINITE SCALING) ====================
+    
     public static int getUpgradeCost(int currentLevel) {
-        return AscendancyData.getUpgradeCost(currentLevel);
+        return AscendancyMod.getUpgradeCost(currentLevel);
     }
     
     // ==================== ASCENSION ====================
     
-    /**
-     * Reset soul XP and notification for a new ascension cycle.
-     */
     public static void resetForAscension(ServerPlayer player) {
         AscendancyData data = getData(player);
-        setData(player, data.resetForAscension(player.totalExperience));
+        int prestigeReward = AscendancyMod.getPrestigeReward(data.ascensionCount());
+        setData(player, data.resetForAscension(player.totalExperience, prestigeReward));
     }
 }

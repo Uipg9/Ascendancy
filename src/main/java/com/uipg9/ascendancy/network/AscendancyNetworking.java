@@ -26,29 +26,59 @@ public class AscendancyNetworking {
     // ==================== PAYLOAD DEFINITIONS ====================
     
     /**
-     * Server -> Client: Sync player data
+     * Server -> Client: Sync player data (15 fields now!)
+     * Uses manual encoding because StreamCodec.composite only supports up to 12 fields.
      */
     public record SyncDataPayload(
-        int soulXP, 
+        int soulXP,
+        int maxSoulXP,
         int prestigePoints, 
         int ascensionCount,
+        int totalPrestigeEarned,
         int healthLevel,
         int speedLevel,
         int reachLevel,
-        int miningLevel
+        int miningLevel,
+        int luckLevel,
+        int damageLevel,
+        int defenseLevel,
+        int experienceLevel,
+        int keeperLevel,   // v2.1
+        int wisdomLevel    // v2.1
     ) implements CustomPacketPayload {
         public static final Type<SyncDataPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(AscendancyMod.MOD_ID, "sync_data"));
         
-        public static final StreamCodec<RegistryFriendlyByteBuf, SyncDataPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, SyncDataPayload::soulXP,
-            ByteBufCodecs.INT, SyncDataPayload::prestigePoints,
-            ByteBufCodecs.INT, SyncDataPayload::ascensionCount,
-            ByteBufCodecs.INT, SyncDataPayload::healthLevel,
-            ByteBufCodecs.INT, SyncDataPayload::speedLevel,
-            ByteBufCodecs.INT, SyncDataPayload::reachLevel,
-            ByteBufCodecs.INT, SyncDataPayload::miningLevel,
-            SyncDataPayload::new
-        );
+        // Manual StreamCodec for 15 fields (composite only supports up to 12)
+        public static final StreamCodec<RegistryFriendlyByteBuf, SyncDataPayload> STREAM_CODEC = new StreamCodec<>() {
+            @Override
+            public SyncDataPayload decode(RegistryFriendlyByteBuf buf) {
+                return new SyncDataPayload(
+                    buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(),
+                    buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(),
+                    buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(),
+                    buf.readInt(), buf.readInt(), buf.readInt()
+                );
+            }
+            
+            @Override
+            public void encode(RegistryFriendlyByteBuf buf, SyncDataPayload payload) {
+                buf.writeInt(payload.soulXP);
+                buf.writeInt(payload.maxSoulXP);
+                buf.writeInt(payload.prestigePoints);
+                buf.writeInt(payload.ascensionCount);
+                buf.writeInt(payload.totalPrestigeEarned);
+                buf.writeInt(payload.healthLevel);
+                buf.writeInt(payload.speedLevel);
+                buf.writeInt(payload.reachLevel);
+                buf.writeInt(payload.miningLevel);
+                buf.writeInt(payload.luckLevel);
+                buf.writeInt(payload.damageLevel);
+                buf.writeInt(payload.defenseLevel);
+                buf.writeInt(payload.experienceLevel);
+                buf.writeInt(payload.keeperLevel);
+                buf.writeInt(payload.wisdomLevel);
+            }
+        };
         
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -57,12 +87,29 @@ public class AscendancyNetworking {
     }
     
     /**
-     * Client -> Server: Request to ascend
+     * Client -> Server: Request to ascend (legacy - no item kept)
      */
     public record AscendRequestPayload() implements CustomPacketPayload {
         public static final Type<AscendRequestPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(AscendancyMod.MOD_ID, "ascend_request"));
         
         public static final StreamCodec<RegistryFriendlyByteBuf, AscendRequestPayload> STREAM_CODEC = StreamCodec.unit(new AscendRequestPayload());
+        
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+    
+    /**
+     * Client -> Server: Request to ascend WITH a chosen item
+     */
+    public record AscendWithItemPayload(int slotToKeep) implements CustomPacketPayload {
+        public static final Type<AscendWithItemPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(AscendancyMod.MOD_ID, "ascend_with_item"));
+        
+        public static final StreamCodec<RegistryFriendlyByteBuf, AscendWithItemPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, AscendWithItemPayload::slotToKeep,
+            AscendWithItemPayload::new
+        );
         
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -86,6 +133,12 @@ public class AscendancyNetworking {
         public static final int SWIFTNESS = 1;
         public static final int REACH = 2;
         public static final int HASTE = 3;
+        public static final int LUCK = 4;
+        public static final int DAMAGE = 5;
+        public static final int DEFENSE = 6;
+        public static final int EXPERIENCE = 7;
+        public static final int KEEPER = 8;    // v2.1
+        public static final int WISDOM = 9;    // v2.1
         
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -95,22 +148,31 @@ public class AscendancyNetworking {
     
     // ==================== REGISTRATION ====================
     
-    /**
-     * Register server-side packet handlers
-     */
     public static void registerServerPackets() {
         // Register payload types
         PayloadTypeRegistry.playS2C().register(SyncDataPayload.TYPE, SyncDataPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(AscendRequestPayload.TYPE, AscendRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(AscendWithItemPayload.TYPE, AscendWithItemPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(PurchaseUpgradePayload.TYPE, PurchaseUpgradePayload.STREAM_CODEC);
         
-        // Handle ascend request
+        // Handle ascend request (legacy - keeps nothing)
         ServerPlayNetworking.registerGlobalReceiver(AscendRequestPayload.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
             player.level().getServer().execute(() -> {
-                // Verify player can ascend
-                if (PlayerDataManager.getSoulXP(player) >= AscendancyMod.MAX_SOUL_XP) {
+                int maxSoulXP = AscendancyMod.getMaxSoulXP(PlayerDataManager.getAscensionCount(player));
+                if (PlayerDataManager.getSoulXP(player) >= maxSoulXP) {
                     AscensionManager.performAscension(player);
+                }
+            });
+        });
+        
+        // Handle ascend with item request (v2.1)
+        ServerPlayNetworking.registerGlobalReceiver(AscendWithItemPayload.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            player.level().getServer().execute(() -> {
+                int maxSoulXP = AscendancyMod.getMaxSoulXP(PlayerDataManager.getAscensionCount(player));
+                if (PlayerDataManager.getSoulXP(player) >= maxSoulXP) {
+                    AscensionManager.performAscensionWithItem(player, payload.slotToKeep());
                 }
             });
         });
@@ -124,10 +186,15 @@ public class AscendancyNetworking {
                     case PurchaseUpgradePayload.SWIFTNESS -> AttributeHandler.purchaseSwiftness(player);
                     case PurchaseUpgradePayload.REACH -> AttributeHandler.purchaseReach(player);
                     case PurchaseUpgradePayload.HASTE -> AttributeHandler.purchaseHaste(player);
+                    case PurchaseUpgradePayload.LUCK -> AttributeHandler.purchaseLuck(player);
+                    case PurchaseUpgradePayload.DAMAGE -> AttributeHandler.purchaseDamage(player);
+                    case PurchaseUpgradePayload.DEFENSE -> AttributeHandler.purchaseDefense(player);
+                    case PurchaseUpgradePayload.EXPERIENCE -> AttributeHandler.purchaseExperience(player);
+                    case PurchaseUpgradePayload.KEEPER -> AttributeHandler.purchaseKeeper(player);
+                    case PurchaseUpgradePayload.WISDOM -> AttributeHandler.purchaseWisdom(player);
                     default -> false;
                 };
                 
-                // Sync updated data back to client
                 if (success) {
                     syncToClient(player);
                 }
@@ -137,22 +204,26 @@ public class AscendancyNetworking {
         AscendancyMod.LOGGER.info("Registered server packets");
     }
     
-    /**
-     * Register client-side packet handlers
-     */
     @Environment(EnvType.CLIENT)
     public static void registerClientPackets() {
-        // Handle sync data from server
         ClientPlayNetworking.registerGlobalReceiver(SyncDataPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 AscendancyClient.updateData(
                     payload.soulXP(),
+                    payload.maxSoulXP(),
                     payload.prestigePoints(),
                     payload.ascensionCount(),
+                    payload.totalPrestigeEarned(),
                     payload.healthLevel(),
                     payload.speedLevel(),
                     payload.reachLevel(),
-                    payload.miningLevel()
+                    payload.miningLevel(),
+                    payload.luckLevel(),
+                    payload.damageLevel(),
+                    payload.defenseLevel(),
+                    payload.experienceLevel(),
+                    payload.keeperLevel(),
+                    payload.wisdomLevel()
                 );
             });
         });
@@ -162,34 +233,39 @@ public class AscendancyNetworking {
     
     // ==================== UTILITY METHODS ====================
     
-    /**
-     * Sync all player data to client
-     */
     public static void syncToClient(ServerPlayer player) {
+        int ascensionCount = PlayerDataManager.getAscensionCount(player);
         SyncDataPayload payload = new SyncDataPayload(
             PlayerDataManager.getSoulXP(player),
+            AscendancyMod.getMaxSoulXP(ascensionCount),
             PlayerDataManager.getPrestigePoints(player),
-            PlayerDataManager.getAscensionCount(player),
+            ascensionCount,
+            PlayerDataManager.getTotalPrestigeEarned(player),
             PlayerDataManager.getHealthLevel(player),
             PlayerDataManager.getSpeedLevel(player),
             PlayerDataManager.getReachLevel(player),
-            PlayerDataManager.getMiningLevel(player)
+            PlayerDataManager.getMiningLevel(player),
+            PlayerDataManager.getLuckLevel(player),
+            PlayerDataManager.getDamageLevel(player),
+            PlayerDataManager.getDefenseLevel(player),
+            PlayerDataManager.getExperienceLevel(player),
+            PlayerDataManager.getKeeperLevel(player),
+            PlayerDataManager.getWisdomLevel(player)
         );
         
         ServerPlayNetworking.send(player, payload);
     }
     
-    /**
-     * Send ascension request to server (client-side)
-     */
     @Environment(EnvType.CLIENT)
     public static void sendAscendRequest() {
         ClientPlayNetworking.send(new AscendRequestPayload());
     }
     
-    /**
-     * Send upgrade purchase request to server (client-side)
-     */
+    @Environment(EnvType.CLIENT)
+    public static void sendAscendWithItemRequest(int slotToKeep) {
+        ClientPlayNetworking.send(new AscendWithItemPayload(slotToKeep));
+    }
+    
     @Environment(EnvType.CLIENT)
     public static void sendPurchaseRequest(int upgradeType) {
         ClientPlayNetworking.send(new PurchaseUpgradePayload(upgradeType));

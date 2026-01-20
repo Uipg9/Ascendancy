@@ -1,24 +1,45 @@
 {
     "itemGroup.ascendancy.main": "Ascendancy",
+    
+    "_comment1": "=== HUD ===",
     "gui.ascendancy.soul_bar": "Soul Energy",
-    "gui.ascendancy.ascension_ready": "Your soul is ready. Press [P] to Ascend.",
+    "gui.ascendancy.ascension_ready": "Your soul is ready! Press [P] to Ascend!",
+    
+    "_comment2": "=== Messages ===",
     "gui.ascendancy.first_join": "Your soul is untethered. Gather experience to begin your journey.",
     "gui.ascendancy.ascension_complete": "A new dawn begins...",
-    "gui.ascendancy.shop_title": "Ascension Upgrades",
-    "gui.ascendancy.upgrade.vitality": "Vitality",
-    "gui.ascendancy.upgrade.vitality.desc": "+2 Hearts per level",
-    "gui.ascendancy.upgrade.haste": "Haste",
-    "gui.ascendancy.upgrade.haste.desc": "+10%% Mining Speed per level",
-    "gui.ascendancy.upgrade.swiftness": "Swiftness",
-    "gui.ascendancy.upgrade.swiftness.desc": "+5%% Movement Speed per level",
-    "gui.ascendancy.upgrade.reach": "Titan's Reach",
-    "gui.ascendancy.upgrade.reach.desc": "+1.0 Block Reach per level",
+    
+    "_comment3": "=== Shop ===",
+    "gui.ascendancy.shop_title": "Ascension",
     "gui.ascendancy.points": "Prestige Points: %d",
     "gui.ascendancy.level": "Level %d",
-    "gui.ascendancy.max_level": "MAX",
     "gui.ascendancy.cost": "Cost: %d Points",
     "gui.ascendancy.not_enough_points": "Not enough Prestige Points!",
     "gui.ascendancy.ascension_count": "Ascension Count: %d",
+    
+    "_comment4": "=== Combat Upgrades ===",
+    "gui.ascendancy.upgrade.vitality": "Vitality",
+    "gui.ascendancy.upgrade.vitality.desc": "+2 Hearts per level",
+    "gui.ascendancy.upgrade.might": "Might",
+    "gui.ascendancy.upgrade.might.desc": "+5% Attack Damage per level",
+    "gui.ascendancy.upgrade.resilience": "Resilience",
+    "gui.ascendancy.upgrade.resilience.desc": "+1 Armor per level",
+    
+    "_comment5": "=== Utility Upgrades ===",
+    "gui.ascendancy.upgrade.swiftness": "Swiftness",
+    "gui.ascendancy.upgrade.swiftness.desc": "+3% Movement Speed per level",
+    "gui.ascendancy.upgrade.reach": "Titan's Reach",
+    "gui.ascendancy.upgrade.reach.desc": "+0.5 Block Reach per level",
+    "gui.ascendancy.upgrade.haste": "Haste",
+    "gui.ascendancy.upgrade.haste.desc": "+8% Mining Speed per level",
+    
+    "_comment6": "=== Special Upgrades ===",
+    "gui.ascendancy.upgrade.fortune": "Fortune's Favor",
+    "gui.ascendancy.upgrade.fortune.desc": "+5% Luck per level",
+    "gui.ascendancy.upgrade.wisdom": "Wisdom",
+    "gui.ascendancy.upgrade.wisdom.desc": "+10% Soul XP gain per level",
+    
+    "_comment7": "=== Keybinds ===",
     "key.ascendancy.ascend": "Open Ascension Menu",
     "key.category.ascendancy": "Ascendancy"
 }

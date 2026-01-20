@@ -24,12 +24,30 @@ public class AscendancyClient implements ClientModInitializer {
     
     // Client-side data cache (synced from server)
     public static int soulXP = 0;
+    public static int maxSoulXP = AscendancyMod.BASE_SOUL_XP;
     public static int prestigePoints = 0;
     public static int ascensionCount = 0;
+    public static int totalPrestigeEarned = 0;
+    
+    // Original upgrades
     public static int healthLevel = 0;
     public static int speedLevel = 0;
     public static int reachLevel = 0;
     public static int miningLevel = 0;
+    
+    // New upgrade categories
+    public static int luckLevel = 0;
+    public static int damageLevel = 0;
+    public static int defenseLevel = 0;
+    public static int experienceLevel = 0;
+    
+    // v2.1 upgrades
+    public static int keeperLevel = 0;
+    public static int wisdomLevel = 0;
+    
+    // v2.2 - Loading screen state
+    public static boolean ascensionLoadingComplete = false;
+    public static boolean ascensionInProgress = false;
     
     // Keybinding for ascension menu
     private static KeyMapping ascendKey;
@@ -61,7 +79,6 @@ public class AscendancyClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (ascendKey.consumeClick()) {
                 if (client.player != null) {
-                    // Open ascension screen
                     client.setScreen(new AscensionScreen());
                 }
             }
@@ -71,30 +88,56 @@ public class AscendancyClient implements ClientModInitializer {
     }
     
     /**
-     * Update client-side data from server sync
+     * Update client-side data from server sync (15 fields for v2.1)
      */
-    public static void updateData(int soulXP, int prestigePoints, int ascensionCount,
-                                   int healthLevel, int speedLevel, int reachLevel, int miningLevel) {
+    public static void updateData(int soulXP, int maxSoulXP, int prestigePoints, int ascensionCount,
+                                   int totalPrestigeEarned, int healthLevel, int speedLevel, 
+                                   int reachLevel, int miningLevel, int luckLevel,
+                                   int damageLevel, int defenseLevel, int experienceLevel,
+                                   int keeperLevel, int wisdomLevel) {
         AscendancyClient.soulXP = soulXP;
+        AscendancyClient.maxSoulXP = maxSoulXP;
         AscendancyClient.prestigePoints = prestigePoints;
         AscendancyClient.ascensionCount = ascensionCount;
+        AscendancyClient.totalPrestigeEarned = totalPrestigeEarned;
         AscendancyClient.healthLevel = healthLevel;
         AscendancyClient.speedLevel = speedLevel;
         AscendancyClient.reachLevel = reachLevel;
         AscendancyClient.miningLevel = miningLevel;
+        AscendancyClient.luckLevel = luckLevel;
+        AscendancyClient.damageLevel = damageLevel;
+        AscendancyClient.defenseLevel = defenseLevel;
+        AscendancyClient.experienceLevel = experienceLevel;
+        AscendancyClient.keeperLevel = keeperLevel;
+        AscendancyClient.wisdomLevel = wisdomLevel;
     }
     
     /**
      * Get the current soul progress as a float 0-1
      */
     public static float getSoulProgress() {
-        return (float) soulXP / AscendancyMod.MAX_SOUL_XP;
+        if (maxSoulXP <= 0) return 0f;
+        return (float) soulXP / maxSoulXP;
     }
     
     /**
      * Check if the player is ready to ascend
      */
     public static boolean canAscend() {
-        return soulXP >= AscendancyMod.MAX_SOUL_XP;
+        return soulXP >= maxSoulXP && maxSoulXP > 0;
+    }
+    
+    /**
+     * Get the cost to upgrade a stat
+     */
+    public static int getUpgradeCost(int currentLevel) {
+        return AscendancyMod.getUpgradeCost(currentLevel);
+    }
+    
+    /**
+     * Check if player can afford an upgrade
+     */
+    public static boolean canAfford(int currentLevel) {
+        return prestigePoints >= getUpgradeCost(currentLevel);
     }
 }
