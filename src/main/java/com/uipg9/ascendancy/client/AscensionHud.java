@@ -12,9 +12,8 @@ import net.minecraft.util.Mth;
  * Renders the Soul Energy HUD element.
  * Uses Mojang Official Mappings for 1.21.11
  * 
- * v2.2 - VERTICAL bar on the LEFT CENTER of the screen
- * This position avoids conflicts with other mods that use top-left,
- * and stays out of the way of sound captions on the right.
+ * v2.4 - VERTICAL bar on the LEFT CENTER of the screen
+ * Now with floating +XP popups when gaining Soul XP!
  * 
  * ALWAYS VISIBLE - shows player's ascension progress
  */
@@ -79,6 +78,43 @@ public class AscensionHud {
         if (AscendancyClient.canAscend()) {
             drawReadyIndicator(graphics, client, x, y);
         }
+        
+        // Draw XP popup when gaining XP
+        drawXpPopup(graphics, client, x, y);
+    }
+    
+    /**
+     * Draw floating +XP popup
+     */
+    private static void drawXpPopup(GuiGraphics graphics, Minecraft client, int barX, int barY) {
+        long elapsed = System.currentTimeMillis() - AscendancyClient.popupStartTime;
+        if (elapsed > AscendancyClient.POPUP_DURATION || AscendancyClient.xpGainedPopup <= 0) {
+            return;
+        }
+        
+        // Calculate fade and float animation
+        float progress = (float) elapsed / AscendancyClient.POPUP_DURATION;
+        float alpha = 1.0f - (progress * progress); // Fade out faster at end
+        float floatOffset = progress * 30f; // Float upward
+        
+        if (alpha < 0.05f) return;
+        
+        // Draw the popup
+        String text = "§a+" + AscendancyClient.xpGainedPopup + " XP";
+        int textWidth = client.font.width(text.replace("§a", "")); // Remove color code for width
+        
+        int textX = barX + BAR_WIDTH + 8;
+        int textY = (int)(barY + (BAR_HEIGHT / 2) - 4 - floatOffset);
+        
+        int alphaInt = (int)(alpha * 255);
+        int color = (alphaInt << 24) | 0x55FF55; // Green with alpha
+        
+        // Background for better readability
+        int bgAlpha = (int)(alpha * 160);
+        graphics.fill(textX - 2, textY - 1, textX + textWidth + 2, textY + 10, (bgAlpha << 24));
+        
+        // Draw text
+        graphics.drawString(client.font, "+" + AscendancyClient.xpGainedPopup + " XP", textX, textY, color, true);
     }
     
     /**

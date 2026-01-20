@@ -2,7 +2,7 @@
 
 > *A Vanilla+ RPG Prestige mod for Minecraft 1.21.11 (Fabric)*
 
-![Version](https://img.shields.io/badge/version-2.3.0-gold)
+![Version](https://img.shields.io/badge/version-2.4.0-gold)
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-brightgreen)
 ![Fabric](https://img.shields.io/badge/Fabric-0.18.4+-blue)
 
@@ -47,17 +47,16 @@ Earn **Soul XP** (independent from vanilla XP) through:
 - Pulsing glow effect when ready to ascend
 - Fills from bottom to top like a mystical container
 
-### The Rebirth Experience
+### The Mysterious Awakening
 When you ascend:
 - ⚠️ **EVERYTHING IS WIPED** (inventory, ender chest, advancements)
 - 🎒 You keep **ONE chosen item** (more with Keeper upgrade!)
 - 📦 Old items preserved in a **Legacy Chest** at your old location
 - 🌅 World time resets to **dawn**
 - ☀️ Weather becomes **clear**
-- 🌌 You descend from the **sky** with protective effects
-- 👁️ Brief **blindness** fades to reveal your new world
-- 🪶 **Slow Falling** + **Resistance** keep you safe
-- ✨ **Regeneration** and **Night Vision** welcome you
+- 👁️ You awaken in **darkness** that slowly fades
+- 🌄 **Morning** reveals your new surroundings
+- ✨ **Night Vision** helps you explore
 
 ### Permanent Upgrades
 | Upgrade | Effect | Description |
@@ -87,7 +86,7 @@ When you ascend:
 
 1. Install **Fabric Loader 0.18.4+** for Minecraft 1.21.11
 2. Install **Fabric API 0.141.1+**
-3. Drop `ascendancy-2.3.0.jar` into your `mods` folder
+3. Drop `ascendancy-2.4.0.jar` into your `mods` folder
 4. Launch and enjoy!
 
 ---
@@ -113,6 +112,13 @@ The built jar will be in `build/libs/`.
 
 ## 📜 Changelog
 
+### v2.4.0 - The Mystery Update
+- 🌙 **Mysterious Awakening**: No more falling from sky - awaken from darkness!
+- ✨ **XP Popups**: Floating "+XP" notifications when gaining Soul XP!
+- 🌅 **Morning Welcome**: Blindness fades to reveal a new morning
+- 📖 **Improved Immersion**: The transition feels magical and mysterious
+- 🔧 **Code Cleanup**: Organized codebase and documentation
+
 ### v2.3.0 - The Journey Update
 - 🌾 **Crop Harvesting**: Earn Soul XP from harvesting mature crops!
 - 👟 **Walking XP**: Earn 1 Soul XP for every 100 blocks walked!
@@ -122,7 +128,7 @@ The built jar will be in `build/libs/`.
 
 ### v2.2.0 - The Soul Harvester Update
 - ✨ **New Soul XP Sources**: Earn Soul XP from mining ores and smelting items!
-- 🌌 **Rebirth Experience**: Descend from the heavens with protective effects
+- 🌌 **Mysterious Awakening**: Awaken in a new place with dramatic effects
 - 👁️ **Immersive Transition**: Blindness fades to reveal your new world
 - 📊 **New HUD Position**: Vertical bar on left-center (avoids mod conflicts)
 - 🎨 **Visual Polish**: Decorative corners, pulsing glow, smooth animations

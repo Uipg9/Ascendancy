@@ -179,11 +179,11 @@ public class GuideScreen extends Screen {
         addText("  3rd Ascension: 7 points");
         addText("  ...and so on!");
         addSpacer();
-        addSubtitle("§6The Rebirth Experience:");
-        addText("You descend from the sky with effects:");
-        addText("  §b• Slow Falling§f - Gentle descent");
-        addText("  §5• Blindness§f - Fades to reveal new world");
+        addSubtitle("§6The Mysterious Awakening:");
+        addText("You awaken in a strange new place:");
+        addText("  §5• Blindness§f - Slowly fades away");
         addText("  §e• Night Vision§f - See your new home");
+        addText("  §6• Morning§f - A fresh new day");
         addText("Old items stored in §6Legacy Chest§f!");
     }
     

@@ -11,9 +11,9 @@ import net.minecraft.util.Mth;
 
 /**
  * Cinematic loading screen shown during ascension.
- * Creates the illusion of entering a new world.
+ * Creates the illusion of a mysterious awakening.
  * 
- * Hides the actual teleportation and sky-drop from the player.
+ * Hides the actual teleportation from the player.
  */
 @Environment(EnvType.CLIENT)
 public class AscensionLoadingScreen extends Screen {
@@ -32,8 +32,8 @@ public class AscensionLoadingScreen extends Screen {
     private static final String[] MESSAGES = {
         "§d✦ Your soul transcends... ✦",
         "§5The old world fades away...",
-        "§d✦ A new realm awaits... ✦",
-        "§5Reality shifts around you...",
+        "§0Darkness surrounds you...",
+        "§5You feel yourself drifting...",
         "§6§l✦ AWAKENING ✦"
     };
     

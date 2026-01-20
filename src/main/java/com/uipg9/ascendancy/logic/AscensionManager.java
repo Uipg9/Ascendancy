@@ -25,15 +25,15 @@ import java.util.List;
 /**
  * Manages the Ascension process - A New World Awaits!
  * 
- * v2.2 - The Rebirth Update:
- * - Player descends from the heavens with protective effects
- * - Blindness fades to reveal a brand new world
+ * v2.4 - The Mystery Update:
+ * - Player awakens mysteriously in a new world
+ * - Blindness fades to reveal morning in a village
+ * - No memory of how they got there - pure mystery!
  * - World resets to dawn with clear skies
- * - Everything feels like starting fresh
  * 
  * Key features:
  * - Player keeps ONE chosen item (amount based on Keeper upgrade)
- * - Sky spawn with Feather Falling + Blindness effects
+ * - Mysterious village spawn with blindness fade
  * - World reset: clear weather, dawn (time=0)
  * - Legacy chest preserves old items at departure site
  */
@@ -48,12 +48,9 @@ public class AscensionManager {
     // Random Z variance
     private static final int RANDOM_Z_RANGE = 100_000;
     
-    // Sky spawn settings
-    private static final int SKY_SPAWN_HEIGHT = 300; // Spawn high in the sky
-    private static final int FEATHER_FALLING_DURATION = 600; // 30 seconds (ticks)
-    private static final int BLINDNESS_DURATION = 200; // 10 seconds (ticks)
-    private static final int SLOW_FALLING_DURATION = 600; // 30 seconds
-    private static final int RESISTANCE_DURATION = 600; // 30 seconds for fall protection
+    // Mysterious awakening settings
+    private static final int BLINDNESS_DURATION = 160; // 8 seconds (ticks) - slowly fades
+    private static final int NIGHT_VISION_DURATION = 600; // 30 seconds after awakening
     
     /**
      * Perform ascension with a chosen item to keep.
@@ -97,16 +94,16 @@ public class AscensionManager {
             player.getInventory().setItem(0, keptItem);
         }
         
-        // 6. CALCULATE NEW POSITION (sky spawn)
-        BlockPos newSpawn = calculateSkySpawnLocation(level, oldPos);
+        // 6. CALCULATE NEW POSITION (village spawn)
+        BlockPos newSpawn = calculateVillageSpawnLocation(level, oldPos);
         
-        // 7. TELEPORT to sky position
+        // 7. TELEPORT to village ground level
         player.teleportTo(newSpawn.getX() + 0.5, newSpawn.getY(), newSpawn.getZ() + 0.5);
         
-        // 8. APPLY DESCENT EFFECTS - The Rebirth Experience
-        applyDescentEffects(player);
+        // 8. APPLY AWAKENING EFFECTS - The Mystery Experience
+        applyAwakeningEffects(player);
         
-        // 9. RESET WORLD PARAMETERS - New World feeling
+        // 9. RESET WORLD PARAMETERS - New morning!
         level.setDayTime(0L); // Dawn - a new day begins
         level.setWeatherParameters(24000, 0, false, false); // Clear weather for a full day
         
@@ -117,37 +114,17 @@ public class AscensionManager {
         AscendancyNetworking.syncToClient(player);
         
         // Send subtle notification (player sees loading screen)
-        player.displayClientMessage(Component.literal("§6§l✦ A new world awaits... ✦"), true);
+        player.displayClientMessage(Component.literal("§6§l✦ You awaken in a new world... ✦"), true);
         
         AscendancyMod.LOGGER.info("Player {} reborn at {}. Ascension #{}", 
             player.getName().getString(), newSpawn, PlayerDataManager.getAscensionCount(player));
     }
     
     /**
-     * Apply protective effects for the descent from the sky
+     * Apply awakening effects - blindness fades to reveal morning
      */
-    private static void applyDescentEffects(ServerPlayer player) {
-        // Slow Falling - gentle descent
-        player.addEffect(new MobEffectInstance(
-            MobEffects.SLOW_FALLING, 
-            SLOW_FALLING_DURATION, 
-            0, // Level 1
-            false, // Not ambient
-            false, // Hide particles (more immersive)
-            true   // Show icon
-        ));
-        
-        // Resistance - protection during descent
-        player.addEffect(new MobEffectInstance(
-            MobEffects.RESISTANCE, 
-            RESISTANCE_DURATION, 
-            4, // Level 5 (immunity basically)
-            false,
-            false,
-            true
-        ));
-        
-        // Blindness - mysterious rebirth (fades to reveal new world)
+    private static void applyAwakeningEffects(ServerPlayer player) {
+        // Blindness - mysterious awakening (fades to reveal new world)
         player.addEffect(new MobEffectInstance(
             MobEffects.BLINDNESS, 
             BLINDNESS_DURATION, 
@@ -160,30 +137,30 @@ public class AscensionManager {
         // Night Vision after blindness - see the beautiful new world
         player.addEffect(new MobEffectInstance(
             MobEffects.NIGHT_VISION, 
-            SLOW_FALLING_DURATION + 200, // Extra time after landing
+            BLINDNESS_DURATION + NIGHT_VISION_DURATION,
             0,
             false,
             false,
             true
         ));
         
-        // Regeneration - feel powerful
+        // Regeneration - feel refreshed
         player.addEffect(new MobEffectInstance(
             MobEffects.REGENERATION,
-            SLOW_FALLING_DURATION,
+            200, // 10 seconds
             1, // Level 2
             false,
             true, // Show particles (golden sparkles)
             true
         ));
         
-        // Glowing - you are special (brief)
+        // Saturation - well fed feeling
         player.addEffect(new MobEffectInstance(
-            MobEffects.GLOWING,
+            MobEffects.SATURATION,
             100, // 5 seconds
             0,
             false,
-            true,
+            false,
             false
         ));
     }
@@ -204,10 +181,10 @@ public class AscensionManager {
     }
     
     /**
-     * Calculate a sky spawn location for the rebirth experience
-     * Player spawns high in the sky, far from their previous location
+     * Calculate a village spawn location for the mysterious awakening
+     * Player spawns on the ground in a new location far away
      */
-    private static BlockPos calculateSkySpawnLocation(ServerLevel level, BlockPos oldPos) {
+    private static BlockPos calculateVillageSpawnLocation(ServerLevel level, BlockPos oldPos) {
         int randomZ = level.random.nextInt(RANDOM_Z_RANGE * 2) - RANDOM_Z_RANGE;
         
         // Calculate current distance from origin
@@ -232,9 +209,11 @@ public class AscensionManager {
             targetZ = randomZ;
         }
         
-        // Sky spawn - high above the world
-        AscendancyMod.LOGGER.info("Sky spawn location: X={}, Z={}, Y={}", targetX, targetZ, SKY_SPAWN_HEIGHT);
-        return new BlockPos(targetX, SKY_SPAWN_HEIGHT, targetZ);
+        // Ground level spawn - wake up on the surface
+        int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, targetX, targetZ) + 1;
+        
+        AscendancyMod.LOGGER.info("Village spawn location: X={}, Z={}, Y={}", targetX, targetZ, groundY);
+        return new BlockPos(targetX, groundY, targetZ);
     }
     
     /**

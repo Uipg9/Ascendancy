@@ -28,7 +28,7 @@ import java.util.UUID;
 
 /**
  * Ascendancy Mod - A Vanilla+ RPG Prestige System
- * Version 2.3 - The Journey Update
+ * Version 2.4 - The Mystery Update
  * 
  * Core loop: Play → Gather Soul XP → Ascend → Reset → Get Permanent Upgrades
  * 

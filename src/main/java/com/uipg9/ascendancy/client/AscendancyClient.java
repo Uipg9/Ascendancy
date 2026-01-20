@@ -29,6 +29,12 @@ public class AscendancyClient implements ClientModInitializer {
     public static int ascensionCount = 0;
     public static int totalPrestigeEarned = 0;
     
+    // XP Popup tracking
+    private static int lastSoulXP = 0;
+    public static int xpGainedPopup = 0;
+    public static long popupStartTime = 0;
+    public static final long POPUP_DURATION = 2000; // 2 seconds in ms
+    
     // Original upgrades
     public static int healthLevel = 0;
     public static int speedLevel = 0;
@@ -95,6 +101,18 @@ public class AscendancyClient implements ClientModInitializer {
                                    int reachLevel, int miningLevel, int luckLevel,
                                    int damageLevel, int defenseLevel, int experienceLevel,
                                    int keeperLevel, int wisdomLevel) {
+        // Track XP gains for popup
+        int xpGained = soulXP - AscendancyClient.soulXP;
+        if (xpGained > 0 && AscendancyClient.soulXP > 0) {
+            // Add to current popup or start new one
+            if (System.currentTimeMillis() - popupStartTime < POPUP_DURATION) {
+                xpGainedPopup += xpGained; // Accumulate
+            } else {
+                xpGainedPopup = xpGained;
+                popupStartTime = System.currentTimeMillis();
+            }
+        }
+        
         AscendancyClient.soulXP = soulXP;
         AscendancyClient.maxSoulXP = maxSoulXP;
         AscendancyClient.prestigePoints = prestigePoints;
