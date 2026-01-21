@@ -4,6 +4,7 @@ import com.uipg9.ascendancy.data.AscendancyAttachments;
 import com.uipg9.ascendancy.data.PlayerDataManager;
 import com.uipg9.ascendancy.logic.AttributeHandler;
 import com.uipg9.ascendancy.network.AscendancyNetworking;
+import com.uipg9.ascendancy.systems.EchoManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -28,7 +29,12 @@ import java.util.UUID;
 
 /**
  * Ascendancy Mod - A Vanilla+ RPG Prestige System
- * Version 2.4 - The Mystery Update
+ * Version 2.5 - The Replayability Expansion
+ * 
+ * v2.5 Features:
+ * - Echo Boss - Armored zombies guard legacy chests, 25% Soul XP bonus
+ * - Constellations - Major perks that define playstyle per run
+ * - Heirloom System - Items evolve across ages, gain lore, become timeworn
  * 
  * Core loop: Play → Gather Soul XP → Ascend → Reset → Get Permanent Upgrades
  * 
@@ -122,7 +128,7 @@ public class AscendancyMod implements ModInitializer {
     
     @Override
     public void onInitialize() {
-        LOGGER.info("§6✦ Ascendancy v2.3 initializing... Your soul awaits. ✦");
+        LOGGER.info("§6✦ Ascendancy v2.5 initializing... Your soul awaits. ✦");
         
         AscendancyAttachments.register();
         AscendancyNetworking.registerServerPackets();
@@ -219,8 +225,15 @@ public class AscendancyMod implements ModInitializer {
     
     /**
      * Handle mob kills - Award Soul XP for combat
+     * v2.5 - Echo kill check for bonus Soul XP
      */
     private void onMobKill(ServerPlayer player, Entity killed) {
+        // Check if this is an Echo kill first (special handling)
+        if (EchoManager.onMobKilled(player, killed)) {
+            // EchoManager handled the Soul XP bonus, don't double count
+            return;
+        }
+        
         int baseSoulXP;
         if (killed instanceof Monster) {
             String entityType = killed.getType().toShortString();

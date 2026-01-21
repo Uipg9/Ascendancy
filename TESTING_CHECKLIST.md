@@ -1,33 +1,31 @@
-# Ascendancy - Testing Checklist
+# Ascendancy v2.5.0 - Testing Checklist
 
 ## ✅ Pre-Test Setup
 - [ ] Mod loads without crashes
-- [ ] Console shows "Ascendancy initializing..." and "Ascendancy initialized successfully!"
+- [ ] Console shows "Ascendancy v2.5 initializing..." and "Ascendancy initialized successfully!"
 - [ ] No mixin errors in the log
 
 ---
 
-## 🎮 In-Game Testing
+## 🎮 Core Features Testing
 
 ### 1. First Join Experience
 - [ ] On first join, see welcome message: "Your soul is untethered..."
 - [ ] HUD shows Soul XP bar (should be at 0%)
 
 ### 2. Soul XP Accumulation
-- [ ] Mine ores or kill mobs to gain vanilla XP
-- [ ] Soul XP bar fills up as you gain experience
-- [ ] In Ascension 0 (first playthrough), bar fills 5x faster (tutorial mode)
-- [ ] When Soul XP reaches 100%, see notification
+- [ ] Mine ores to gain Soul XP
+- [ ] Kill mobs to gain Soul XP
+- [ ] Harvest crops for Soul XP
+- [ ] Walking awards Soul XP over distance
+- [ ] In Ascension 0 (first playthrough), gains are 10x (tutorial mode)
+- [ ] When Soul XP reaches max, notification appears
 
 ### 3. Ascension Screen (Press P)
 - [ ] Opens the Ascension screen when pressing P key
 - [ ] Shows current Soul XP and Prestige Points
 - [ ] Shows current Ascension count
-- [ ] Displays upgrade grid with:
-  - Health (❤️)
-  - Speed (⚡)
-  - Reach (🤚)
-  - Mining (⛏️)
+- [ ] Displays upgrade tabs: Combat, Utility, Special
 
 ### 4. Upgrade System
 - [ ] Each upgrade shows current level and cost
@@ -36,18 +34,44 @@
 - [ ] Sound plays on successful purchase
 - [ ] Cannot purchase when insufficient points
 
-### 5. Ascend Button
-- [ ] "Ascend" button shows cost in Soul XP
-- [ ] Clicking Ascend when Soul XP bar is full:
-  - Resets Soul XP to 0
-  - Grants Prestige Points (based on Ascension tier)
-  - Resets vanilla XP and level to 0
-  - Increments Ascension count
-- [ ] After Ascension, upgrade effects persist
+### 5. Ascend Flow
+- [ ] "Ascend" button only enabled when max Soul XP reached
+- [ ] Item Selection Screen opens when clicking Ascend
+- [ ] Can select ONE item to keep (with Keeper upgrade)
+- [ ] Clicking Ascend starts cinematic loading screen
 
-### 6. Persistent Upgrades
-- [ ] Health upgrade: Check max hearts increased
-  - Level 1 = +1 heart, Level 10 = +10 hearts
+---
+
+## 🆕 v2.5.0 - Replayability Expansion Testing
+
+### 6. Legacy Chest & Echo Boss
+- [ ] After ascending, legacy chest appears at old location
+- [ ] Glowstone marks the chest location
+- [ ] ALL previous inventory items are in the chest
+- [ ] When approaching legacy chest, "The Echo" spawns (purple zombie)
+- [ ] Echo wears your old armor from previous life
+- [ ] Killing Echo gives bonus message and Soul XP
+- [ ] Echo bonus is 25% of max Soul XP for that ascension
+
+### 7. Constellation System
+- [ ] After ascension cinematic, Constellation Selection Screen opens
+- [ ] Can choose one of 4 constellations
+- [ ] Skip option available (no constellation)
+- [ ] **Star of the Deep**: Get Night Vision when below Y=0
+- [ ] **Star of the Wind**: Take 80% less fall damage
+- [ ] **Star of the Beast**: Mounted animals heal over time
+- [ ] **Star of the Sea**: Never run out of air underwater
+
+### 8. Heirloom System
+- [ ] Item kept through ascension shows "Heirloom" lore
+- [ ] Age counter tracks how many lives item survived
+- [ ] After 5 ages, item gets gold name
+- [ ] After 10 ages, item gets enchant glow
+- [ ] After 25 ages, item becomes "Timeworn" (unbreakable)
+
+---
+
+## Original Testing (Still Valid)
 - [ ] Speed upgrade: Movement speed increased
 - [ ] Reach upgrade: Block reach distance increased
 - [ ] Mining upgrade: Mining speed increased

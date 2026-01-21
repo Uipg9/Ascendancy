@@ -3,6 +3,9 @@ package com.uipg9.ascendancy.logic;
 import com.uipg9.ascendancy.AscendancyMod;
 import com.uipg9.ascendancy.data.PlayerDataManager;
 import com.uipg9.ascendancy.network.AscendancyNetworking;
+import com.uipg9.ascendancy.systems.ConstellationManager;
+import com.uipg9.ascendancy.systems.EchoManager;
+import com.uipg9.ascendancy.systems.HeirloomManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -25,6 +28,11 @@ import java.util.List;
 
 /**
  * Manages the Ascension process - A New World Awaits!
+ * 
+ * v2.5 - The Replayability Expansion:
+ * - Echo boss guards legacy chests
+ * - Heirloom items evolve across lives
+ * - Constellation system for major perks
  * 
  * v2.4 - The Mystery Update:
  * - Player awakens mysteriously in a new world
@@ -77,25 +85,33 @@ public class AscensionManager {
                 int keepAmount = getKeepAmount(player);
                 int actualAmount = Math.min(keepAmount, original.getCount());
                 keptItem = original.copyWithCount(actualAmount);
-                AscendancyMod.LOGGER.info("Player keeping {} x{}", keptItem.getDisplayName().getString(), actualAmount);
+                
+                // Process as Heirloom - adds lore and special properties!
+                keptItem = HeirloomManager.processHeirloom(keptItem, player, currentAscensionCount + 1);
+                
+                AscendancyMod.LOGGER.info("Player keeping heirloom {} x{}", keptItem.getDisplayName().getString(), actualAmount);
             }
         }
         
         // 2. Collect ALL items before wiping (for legacy chest)
         List<ItemStack> allItems = collectAllItems(player);
         
-        // 3. CREATE LEGACY SITE at old location
-        createLegacySite(level, oldPos, allItems);
+        // 3. CREATE LEGACY SITE at old location + Register Echo spawn point
+        BlockPos chestPos = createLegacySite(level, oldPos, allItems);
+        EchoManager.registerLegacySite(player, chestPos);
         
-        // 4. WIPE PLAYER completely - NO keep inventory!
+        // 4. Clear constellation for new life selection
+        ConstellationManager.clearConstellation(player);
+        
+        // 5. WIPE PLAYER completely - NO keep inventory!
         wipePlayer(player);
         
-        // 5. Return kept item to first slot
+        // 6. Return kept item to first slot
         if (!keptItem.isEmpty()) {
             player.getInventory().setItem(0, keptItem);
         }
         
-        // 6. CALCULATE NEW POSITION (village spawn)
+        // 7. CALCULATE NEW POSITION (village spawn)
         BlockPos newSpawn = calculateVillageSpawnLocation(level, oldPos);
         
         // 7. TELEPORT to village ground level and set as spawn
@@ -293,8 +309,10 @@ public class AscensionManager {
     
     /**
      * Create the legacy site with a double chest containing items
+     * Also stores location for Echo boss spawning
+     * @return The position of the chest for Echo registration
      */
-    private static void createLegacySite(ServerLevel level, BlockPos pos, List<ItemStack> items) {
+    private static BlockPos createLegacySite(ServerLevel level, BlockPos pos, List<ItemStack> items) {
         // Find a safe surface position
         int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, pos.getX(), pos.getZ());
         BlockPos chestPos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
@@ -303,7 +321,7 @@ public class AscensionManager {
         level.setBlock(chestPos.above(), Blocks.AIR.defaultBlockState(), 3);
         level.setBlock(chestPos.above().above(), Blocks.AIR.defaultBlockState(), 3);
         
-        // Place double chest
+        // Place double chest - ensure proper facing
         level.setBlock(chestPos, Blocks.CHEST.defaultBlockState()
             .setValue(ChestBlock.TYPE, ChestType.LEFT)
             .setValue(ChestBlock.FACING, Direction.NORTH), 3);
@@ -311,19 +329,26 @@ public class AscensionManager {
             .setValue(ChestBlock.TYPE, ChestType.RIGHT)
             .setValue(ChestBlock.FACING, Direction.NORTH), 3);
         
-        // Fill chest with items
-        if (level.getBlockEntity(chestPos) instanceof ChestBlockEntity chest) {
-            int slot = 0;
-            for (ItemStack item : items) {
-                if (slot >= 54) break; // Double chest has 54 slots
-                chest.setItem(slot++, item);
+        // Schedule item filling for next tick (ensures block entity exists)
+        level.getServer().execute(() -> {
+            if (level.getBlockEntity(chestPos) instanceof ChestBlockEntity chest) {
+                int slot = 0;
+                for (ItemStack item : items) {
+                    if (slot >= 54) break; // Double chest has 54 slots
+                    chest.setItem(slot++, item);
+                }
+                chest.setChanged();
+                AscendancyMod.LOGGER.info("Filled legacy chest with {} items at {}", slot, chestPos);
+            } else {
+                AscendancyMod.LOGGER.warn("Failed to get chest block entity at {}", chestPos);
             }
-        }
+        });
         
         // Place a glowstone marker on top of chest for visibility
         level.setBlock(chestPos.above(), Blocks.GLOWSTONE.defaultBlockState(), 3);
         
         AscendancyMod.LOGGER.info("Created legacy site at {}", chestPos);
+        return chestPos;
     }
     
     /**

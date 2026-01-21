@@ -61,10 +61,11 @@ public class AscensionLoadingScreen extends Screen {
         int messageInterval = MESSAGE_DURATION / MESSAGES.length;
         currentMessage = Math.min(ticksOpen / (messageInterval + 8), MESSAGES.length - 1);
         
-        // Close screen after duration
+        // Close screen after duration - open constellation selection!
         if (ticksOpen >= TOTAL_DURATION) {
             AscendancyClient.ascensionLoadingComplete = true;
-            this.minecraft.setScreen(null);
+            // Open constellation selection screen for new life
+            this.minecraft.setScreen(new ConstellationSelectionScreen());
         }
     }
     

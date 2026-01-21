@@ -5,6 +5,7 @@ import com.uipg9.ascendancy.client.AscendancyClient;
 import com.uipg9.ascendancy.data.PlayerDataManager;
 import com.uipg9.ascendancy.logic.AscensionManager;
 import com.uipg9.ascendancy.logic.AttributeHandler;
+import com.uipg9.ascendancy.systems.ConstellationManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -146,6 +147,24 @@ public class AscendancyNetworking {
         }
     }
     
+    /**
+     * Client -> Server: Select a constellation for this life
+     * v2.5 - Replayability Expansion
+     */
+    public record SelectConstellationPayload(int constellationOrdinal) implements CustomPacketPayload {
+        public static final Type<SelectConstellationPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(AscendancyMod.MOD_ID, "select_constellation"));
+        
+        public static final StreamCodec<RegistryFriendlyByteBuf, SelectConstellationPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, SelectConstellationPayload::constellationOrdinal,
+            SelectConstellationPayload::new
+        );
+        
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+    
     // ==================== REGISTRATION ====================
     
     public static void registerServerPackets() {
@@ -154,6 +173,7 @@ public class AscendancyNetworking {
         PayloadTypeRegistry.playC2S().register(AscendRequestPayload.TYPE, AscendRequestPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(AscendWithItemPayload.TYPE, AscendWithItemPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(PurchaseUpgradePayload.TYPE, PurchaseUpgradePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(SelectConstellationPayload.TYPE, SelectConstellationPayload.STREAM_CODEC);
         
         // Handle ascend request (legacy - keeps nothing)
         ServerPlayNetworking.registerGlobalReceiver(AscendRequestPayload.TYPE, (payload, context) -> {
@@ -197,6 +217,17 @@ public class AscendancyNetworking {
                 
                 if (success) {
                     syncToClient(player);
+                }
+            });
+        });
+        
+        // Handle constellation selection (v2.5)
+        ServerPlayNetworking.registerGlobalReceiver(SelectConstellationPayload.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            player.level().getServer().execute(() -> {
+                ConstellationManager.Constellation[] values = ConstellationManager.Constellation.values();
+                if (payload.constellationOrdinal() >= 0 && payload.constellationOrdinal() < values.length) {
+                    ConstellationManager.setConstellation(player, values[payload.constellationOrdinal()]);
                 }
             });
         });
