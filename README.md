@@ -2,7 +2,7 @@
 
 > *A Vanilla+ RPG Prestige mod for Minecraft 1.21.11 (Fabric)*
 
-![Version](https://img.shields.io/badge/version-2.4.4-gold)
+![Version](https://img.shields.io/badge/version-2.5.1-gold)
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-brightgreen)
 ![Fabric](https://img.shields.io/badge/Fabric-0.18.4+-blue)
 
@@ -86,7 +86,7 @@ When you ascend:
 
 1. Install **Fabric Loader 0.18.4+** for Minecraft 1.21.11
 2. Install **Fabric API 0.141.1+**
-3. Drop `ascendancy-2.4.4.jar` into your `mods` folder
+3. Drop `ascendancy-2.5.1.jar` into your `mods` folder
 4. Launch and enjoy!
 
 ---
@@ -111,6 +111,14 @@ The built jar will be in `build/libs/`.
 ---
 
 ## 📜 Changelog
+
+### v2.5.1 - The Replayability Update
+- 🎯 **Soul's Craving System**: Each life has a random quest objective (kill X mobs, mine Y ores, etc.) that awards +3 bonus prestige upon completion!
+- 📖 **The Chronicle**: A procedural diary that automatically records major events and milestones across all your lives - track your journey!
+- 🏆 **Ascension Achievements**: 17 permanent achievements that unlock powerful passive bonuses (damage, speed, mining, XP) that last forever!
+- 🐾 **Ancestral Bond**: Carry your beloved tamed pets to your next life! Prestige-gated pet slots (1 at 5 prestige, 2 at 10, 3 at 15).
+- 🎨 **Hall of Legends**: New UI screen (press L) to view all your achievements, progress, and unlocked bonuses!
+- 🔧 **1.21.11 API Fixes**: Fixed mixin signatures for fall damage and durability systems to match latest Minecraft API changes
 
 ### v2.4.4 - Performance & UX Update
 - ⚡ **Reduced Teleport Distance**: 50k blocks instead of 1 million - eliminates lag!

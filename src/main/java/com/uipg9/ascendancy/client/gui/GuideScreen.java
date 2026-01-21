@@ -58,7 +58,7 @@ public class GuideScreen extends Screen {
     // Sections
     private static final String[] SECTIONS = {
         "Overview", "Getting Started", "Soul Energy", "Ascension", 
-        "Upgrades", "Tips & Tricks", "Quick Reference"
+        "Upgrades", "New Features", "Tips & Tricks", "Quick Reference"
     };
     
     public GuideScreen() {
@@ -75,8 +75,9 @@ public class GuideScreen extends Screen {
             case 2 -> buildSoulEnergy();
             case 3 -> buildAscension();
             case 4 -> buildUpgrades();
-            case 5 -> buildTips();
-            case 6 -> buildQuickReference();
+            case 5 -> buildNewFeatures();
+            case 6 -> buildTips();
+            case 7 -> buildQuickReference();
         }
     }
     
@@ -214,6 +215,57 @@ public class GuideScreen extends Screen {
         addText("No cap - upgrade forever!");
     }
     
+    private void buildNewFeatures() {
+        addTitle("✦ New Features (v2.5.1) ✦");
+        addSpacer();
+        addSubtitle("§6Soul's Craving:");
+        addText("Each life gives you a §erandom quest§f!");
+        addText("Examples: Kill 50 monsters, mine 30");
+        addText("ores, harvest 100 crops, etc.");
+        addText("Complete it for §e+3 bonus prestige§f!");
+        addSpacer();
+        addSubtitle("§6The Chronicle:");
+        addText("A §aauto-generated diary§f tracking your");
+        addText("journey across all lives!");
+        addText("Records: First diamond, nether entry,");
+        addText("boss kills, deepslate depths, and more.");
+        addSpacer();
+        addSubtitle("§6Ascension Achievements:");
+        addText("§e17 permanent achievements§f that unlock");
+        addText("§bpassive bonuses§f that last forever!");
+        addText("View them in the §dHall of Legends§f!");
+        addSpacer();
+        addSubtitle("§6Achievement Bonuses:");
+        addText("§c• Slayer I/II/III§f - Attack Damage +1/2/3%");
+        addText("§a• Explorer I/II§f - Movement Speed +1/2%");
+        addText("§a• Miner I/II§f - Mining Speed +2/4%");
+        addText("§d• Diamond Collector§f - Mining Speed +3%");
+        addText("§d• Dragon Hunter§f - Attack Damage +5%");
+        addText("§d• Wither Slayer§f - Max Health +2");
+        addText("§d• Echo Vanquisher§f - Max Health +4");
+        addText("§d• Craving Master§f - Prestige Points +10%");
+        addText("§d• Heirloom Keeper§f - Max Health +2");
+        addText("§d• First Steps§f - XP Gain +5%");
+        addText("§d• Veteran§f - XP Gain +10%");
+        addText("§d• Legend§f - XP Gain +15%");
+        addText("§d• Eternal§f - All bonuses +20%");
+        addSpacer();
+        addSubtitle("§6Ancestral Bond:");
+        addText("§bCarry tamed pets to next life§f!");
+        addText("Pet slots unlock with prestige:");
+        addText("  §e5 prestige§f: 1 pet slot");
+        addText("  §e10 prestige§f: 2 pet slots");
+        addText("  §e15 prestige§f: 3 pet slots");
+        addText("Tame pets and they'll follow you");
+        addText("through ascension!");
+        addSpacer();
+        addSubtitle("§6Hall of Legends:");
+        addText("Press §e[L]§f to open the achievement");
+        addText("screen! View all 17 achievements,");
+        addText("track progress, and see your total");
+        addText("bonuses from completed achievements.");
+    }
+    
     private void buildTips() {
         addTitle("Tips & Tricks");
         addSpacer();
@@ -227,6 +279,14 @@ public class GuideScreen extends Screen {
         addText("• Get §dWisdom§f early for faster XP");
         addText("• Get §cKeeper§f to keep more items!");
         addText("• §aSwiftness§f = more walking XP!");
+        addSpacer();
+        addSubtitle("§e★ v2.5.1 Features:");
+        addText("• Complete your §eSoul's Craving§f for");
+        addText("  +3 bonus prestige each life!");
+        addText("• Unlock §bachievements§f for permanent");
+        addText("  passive bonuses!");
+        addText("• Press §e[L]§f to view Hall of Legends");
+        addText("• Tame pets - they'll carry over!");
         addSpacer();
         addSubtitle("§e★ Don't Settle!");
         addText("Each ascension gives MORE points.");
@@ -244,6 +304,7 @@ public class GuideScreen extends Screen {
         addSpacer();
         addSubtitle("§eControls:");
         addText("§f[P]§7 - Open Ascension Menu");
+        addText("§f[L]§7 - Open Hall of Legends (Achievements)");
         addSpacer();
         addSubtitle("§eHUD (Left-Center):");
         addText("§f[SOUL Bar]§7 - Vertical progress bar");
