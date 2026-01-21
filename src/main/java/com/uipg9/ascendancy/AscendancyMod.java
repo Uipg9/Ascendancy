@@ -4,7 +4,7 @@ import com.uipg9.ascendancy.data.AscendancyAttachments;
 import com.uipg9.ascendancy.data.PlayerDataManager;
 import com.uipg9.ascendancy.logic.AttributeHandler;
 import com.uipg9.ascendancy.network.AscendancyNetworking;
-import com.uipg9.ascendancy.systems.EchoManager;
+import com.uipg9.ascendancy.systems.*;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -128,7 +128,7 @@ public class AscendancyMod implements ModInitializer {
     
     @Override
     public void onInitialize() {
-        LOGGER.info("§6✦ Ascendancy v2.5 initializing... Your soul awaits. ✦");
+        LOGGER.info("§6✦ Ascendancy v2.5.1 initializing... Your soul awaits. ✦");
         
         AscendancyAttachments.register();
         AscendancyNetworking.registerServerPackets();
@@ -141,6 +141,12 @@ public class AscendancyMod implements ModInitializer {
             // Initialize walking tracking
             playerLastPos.put(player.getUUID(), player.blockPosition());
             playerWalkDistance.put(player.getUUID(), 0.0);
+            
+            // v2.5 - Load persistent systems data
+            AchievementManager.loadAchievements(player);
+            AncestralBondManager.loadData(player);
+            ChronicleManager.loadCurrentLife(player);
+            SoulCravingManager.loadData(player);
             
             if (PlayerDataManager.getAscensionCount(player) == 0 && 
                 PlayerDataManager.getSoulXP(player) == 0) {
@@ -157,11 +163,18 @@ public class AscendancyMod implements ModInitializer {
             AscendancyNetworking.syncToClient(player);
         });
         
-        // Player disconnect - cleanup
+        // Player disconnect - cleanup and save
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            UUID playerId = handler.getPlayer().getUUID();
+            ServerPlayer player = handler.getPlayer();
+            UUID playerId = player.getUUID();
             playerLastPos.remove(playerId);
             playerWalkDistance.remove(playerId);
+            
+            // v2.5 - Save persistent systems data
+            AchievementManager.saveAchievements(player);
+            AncestralBondManager.saveData(player);
+            ChronicleManager.saveCurrentLife(player);
+            SoulCravingManager.saveData(player);
         });
         
         // Respawn - reapply upgrades
@@ -190,6 +203,7 @@ public class AscendancyMod implements ModInitializer {
     
     /**
      * Call this every server tick from a mixin or event to track walking
+     * v2.5 - Also tracks exploration achievements and cravings
      */
     public static void tickPlayerMovement(ServerPlayer player) {
         UUID playerId = player.getUUID();
@@ -215,6 +229,11 @@ public class AscendancyMod implements ModInitializer {
             while (totalDistance >= WALK_DISTANCE_PER_XP) {
                 awardSoulXPStatic(player, SOUL_XP_WALK, "§d👟");
                 totalDistance -= WALK_DISTANCE_PER_XP;
+                
+                // v2.5 - Track for achievements and cravings
+                AchievementManager.addProgress(player, AchievementManager.Achievement.EXPLORER_I, 100);
+                AchievementManager.addProgress(player, AchievementManager.Achievement.EXPLORER_II, 100);
+                SoulCravingManager.addProgress(player, SoulCravingManager.CravingType.TRAVEL_DISTANCE, 100);
             }
             
             playerWalkDistance.put(playerId, totalDistance);
@@ -225,22 +244,51 @@ public class AscendancyMod implements ModInitializer {
     
     /**
      * Handle mob kills - Award Soul XP for combat
-     * v2.5 - Echo kill check for bonus Soul XP
+     * v2.5 - Echo kill check for bonus Soul XP + Achievement/Craving tracking
      */
     private void onMobKill(ServerPlayer player, Entity killed) {
         // Check if this is an Echo kill first (special handling)
         if (EchoManager.onMobKilled(player, killed)) {
             // EchoManager handled the Soul XP bonus, don't double count
+            // But still track achievements for Echo kills
+            AchievementManager.addProgress(player, AchievementManager.Achievement.ECHO_VANQUISHER, 1);
             return;
         }
         
         int baseSoulXP;
-        if (killed instanceof Monster) {
-            String entityType = killed.getType().toShortString();
-            if (entityType.contains("dragon") || entityType.contains("wither") || entityType.contains("elder_guardian")) {
+        boolean isMonster = killed instanceof Monster;
+        String entityType = killed.getType().toShortString();
+        boolean isBoss = entityType.contains("dragon") || entityType.contains("wither") || entityType.contains("elder_guardian");
+        boolean isUndead = entityType.contains("zombie") || entityType.contains("skeleton") || entityType.contains("phantom") || 
+                          entityType.contains("drowned") || entityType.contains("wither");
+        
+        if (isMonster) {
+            if (isBoss) {
                 baseSoulXP = SOUL_XP_PER_BOSS;
+                
+                // Track boss achievements
+                if (entityType.contains("dragon")) {
+                    AchievementManager.setProgress(player, AchievementManager.Achievement.DRAGON_HUNTER, 1);
+                    ChronicleManager.recordMilestone(player, "dragon_kill", "Slew the Ender Dragon!");
+                } else if (entityType.contains("wither")) {
+                    AchievementManager.setProgress(player, AchievementManager.Achievement.WITHER_SLAYER, 1);
+                    ChronicleManager.recordMilestone(player, "wither_kill", "Defeated the Wither!");
+                }
             } else {
                 baseSoulXP = SOUL_XP_PER_MONSTER;
+            }
+            
+            // Track monster kills for achievements
+            AchievementManager.addProgress(player, AchievementManager.Achievement.SLAYER_I, 1);
+            AchievementManager.addProgress(player, AchievementManager.Achievement.SLAYER_II, 1);
+            AchievementManager.addProgress(player, AchievementManager.Achievement.SLAYER_III, 1);
+            
+            // Track for Soul's Craving
+            SoulCravingManager.addProgress(player, SoulCravingManager.CravingType.SLAY_MONSTERS, 1);
+            
+            // Track undead kills for craving
+            if (isUndead) {
+                SoulCravingManager.addProgress(player, SoulCravingManager.CravingType.KILL_UNDEAD, 1);
             }
         } else if (killed instanceof Animal) {
             baseSoulXP = SOUL_XP_PER_ANIMAL;
@@ -253,6 +301,7 @@ public class AscendancyMod implements ModInitializer {
     
     /**
      * Handle block mining - Award Soul XP for ores and crops
+     * v2.5 - Track achievements and cravings
      */
     private void onBlockMined(ServerPlayer player, BlockState state, BlockPos pos) {
         Block block = state.getBlock();
@@ -260,23 +309,39 @@ public class AscendancyMod implements ModInitializer {
         
         int baseSoulXP = 0;
         String icon = "§b⛏";
+        boolean isOre = false;
+        boolean isDiamond = false;
         
         // Check for ores
-        if (path.contains("coal_ore")) baseSoulXP = SOUL_XP_COAL;
-        else if (path.contains("iron_ore") || path.contains("deepslate_iron")) baseSoulXP = SOUL_XP_IRON;
-        else if (path.contains("copper_ore")) baseSoulXP = SOUL_XP_COPPER;
-        else if (path.contains("gold_ore") || path.contains("nether_gold")) baseSoulXP = SOUL_XP_GOLD;
-        else if (path.contains("redstone_ore")) baseSoulXP = SOUL_XP_REDSTONE;
-        else if (path.contains("lapis_ore")) baseSoulXP = SOUL_XP_LAPIS;
-        else if (path.contains("diamond_ore")) baseSoulXP = SOUL_XP_DIAMOND;
-        else if (path.contains("emerald_ore")) baseSoulXP = SOUL_XP_EMERALD;
-        else if (path.contains("ancient_debris")) baseSoulXP = SOUL_XP_ANCIENT_DEBRIS;
-        else if (path.contains("nether_quartz_ore") || path.contains("quartz_ore")) baseSoulXP = SOUL_XP_QUARTZ;
+        if (path.contains("coal_ore")) { baseSoulXP = SOUL_XP_COAL; isOre = true; }
+        else if (path.contains("iron_ore") || path.contains("deepslate_iron")) { baseSoulXP = SOUL_XP_IRON; isOre = true; }
+        else if (path.contains("copper_ore")) { baseSoulXP = SOUL_XP_COPPER; isOre = true; }
+        else if (path.contains("gold_ore") || path.contains("nether_gold")) { baseSoulXP = SOUL_XP_GOLD; isOre = true; }
+        else if (path.contains("redstone_ore")) { baseSoulXP = SOUL_XP_REDSTONE; isOre = true; }
+        else if (path.contains("lapis_ore")) { baseSoulXP = SOUL_XP_LAPIS; isOre = true; }
+        else if (path.contains("diamond_ore")) { 
+            baseSoulXP = SOUL_XP_DIAMOND; 
+            isOre = true; 
+            isDiamond = true;
+            
+            // Track for achievements and chronicle
+            AchievementManager.addProgress(player, AchievementManager.Achievement.DIAMOND_COLLECTOR, 1);
+            ChronicleManager.recordMilestone(player, "first_diamond", "Found their first diamond!");
+            SoulCravingManager.addProgress(player, SoulCravingManager.CravingType.MINE_DIAMONDS, 1);
+        }
+        else if (path.contains("emerald_ore")) { baseSoulXP = SOUL_XP_EMERALD; isOre = true; }
+        else if (path.contains("ancient_debris")) { 
+            baseSoulXP = SOUL_XP_ANCIENT_DEBRIS; 
+            isOre = true; 
+            ChronicleManager.recordMilestone(player, "ancient_debris", "Discovered ancient debris!");
+        }
+        else if (path.contains("nether_quartz_ore") || path.contains("quartz_ore")) { baseSoulXP = SOUL_XP_QUARTZ; isOre = true; }
         // Check for mature crops
         else if (block instanceof CropBlock cropBlock) {
             if (cropBlock.isMaxAge(state)) {
                 baseSoulXP = SOUL_XP_CROP;
                 icon = "§a🌾";
+                SoulCravingManager.addProgress(player, SoulCravingManager.CravingType.HARVEST_CROPS, 1);
             }
         }
         // Check for other harvestable crops by name
@@ -285,6 +350,14 @@ public class AscendancyMod implements ModInitializer {
                  path.equals("cocoa") || path.equals("sweet_berry_bush") || path.equals("nether_wart")) {
             baseSoulXP = SOUL_XP_CROP;
             icon = "§a🌾";
+            SoulCravingManager.addProgress(player, SoulCravingManager.CravingType.HARVEST_CROPS, 1);
+        }
+        
+        // Track ore mining for achievements and cravings
+        if (isOre) {
+            AchievementManager.addProgress(player, AchievementManager.Achievement.MINER_I, 1);
+            AchievementManager.addProgress(player, AchievementManager.Achievement.MINER_II, 1);
+            SoulCravingManager.addProgress(player, SoulCravingManager.CravingType.MINE_ORES, 1);
         }
         
         if (baseSoulXP > 0) {

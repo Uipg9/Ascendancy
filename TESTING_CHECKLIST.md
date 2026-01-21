@@ -1,8 +1,8 @@
-# Ascendancy v2.5.0 - Testing Checklist
+# Ascendancy v2.5.1 - Testing Checklist
 
 ## ✅ Pre-Test Setup
 - [ ] Mod loads without crashes
-- [ ] Console shows "Ascendancy v2.5 initializing..." and "Ascendancy initialized successfully!"
+- [ ] Console shows "Ascendancy v2.5.1 initializing..." and "Ascendancy initialized successfully!"
 - [ ] No mixin errors in the log
 
 ---
@@ -101,6 +101,41 @@
 
 ---
 
+## 🆕 v2.5.1 - Extended Replayability Features
+
+### 9. Soul's Craving System
+- [ ] After ascension, receive a random craving notification
+- [ ] Craving types include: Bloodlust, Earth Hunger, Nature's Call, etc.
+- [ ] Progress updates as you complete the craving's requirements
+- [ ] On completion, see "Soul's Craving Satisfied!" message
+- [ ] Completing craving grants +3 bonus Prestige on next ascension
+
+### 10. Chronicle System
+- [ ] Chronicle auto-records when entering Nether for first time
+- [ ] Chronicle auto-records when entering End for first time
+- [ ] Chronicle records first diamond mined
+- [ ] Chronicle records boss kills (Dragon, Wither)
+- [ ] Notification shows "[Chronicle: event description]"
+
+### 11. Ascension Achievements
+- [ ] Achievements persist forever (even across ascensions)
+- [ ] Kill achievements: Slayer I/II/III (100/500/2000 kills)
+- [ ] Mining achievements: Miner I/II (500/2000 ores)
+- [ ] Travel achievements: Explorer I/II (10k/50k blocks)
+- [ ] Boss achievements: Dragon Hunter, Wither Slayer
+- [ ] Ascension achievements: First Steps, Veteran, Legend, Eternal
+- [ ] Achievement unlock shows notification with reward description
+
+### 12. Ancestral Bond System
+- [ ] At 5+ Prestige, can bond with 1 tamed pet
+- [ ] At 10+ Prestige, can bond with 2 pets
+- [ ] At 15+ Prestige, can bond with 3 pets
+- [ ] After ascension, bonded pets spawn near player
+- [ ] Pets have custom names preserved
+- [ ] Bond strength increases each ascension
+
+---
+
 ## 🐛 Bug Checks
 
 ### Common Issues to Watch For
@@ -137,14 +172,23 @@
 | 9 → 10 | 10 |
 | **Total** | **55** |
 
-### Tutorial Mode
-- First Ascension (Ascension 0): Soul XP fills 5x faster
-- Goal: Let new players experience the full loop quickly
+### Achievement Bonuses
+| Achievement | Reward |
+|-------------|--------|
+| Slayer I/II/III | +2%/3%/5% damage |
+| Explorer I/II | +2%/3% speed |
+| Miner I/II | +5%/10% mining speed |
+| Dragon/Wither | -10% boss damage |
+| First Steps | +5% Soul XP |
+| Veteran/Legend | +10%/15% Soul XP |
+| Eternal | +1 Prestige per ascension |
 
 ---
 
 ## 🎯 Test Complete When
 - [ ] All core features work as expected
+- [ ] All v2.5.0 replayability features work
+- [ ] All v2.5.1 extended features work
 - [ ] No crashes during normal gameplay
 - [ ] Data persists across saves and deaths
 - [ ] Upgrades apply correct bonuses
@@ -152,4 +196,4 @@
 
 ---
 
-*Testing Checklist - Ascendancy v1.0.0*
+*Testing Checklist - Ascendancy v2.5.1*

@@ -3,9 +3,7 @@ package com.uipg9.ascendancy.logic;
 import com.uipg9.ascendancy.AscendancyMod;
 import com.uipg9.ascendancy.data.PlayerDataManager;
 import com.uipg9.ascendancy.network.AscendancyNetworking;
-import com.uipg9.ascendancy.systems.ConstellationManager;
-import com.uipg9.ascendancy.systems.EchoManager;
-import com.uipg9.ascendancy.systems.HeirloomManager;
+import com.uipg9.ascendancy.systems.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -74,8 +72,27 @@ public class AscensionManager {
         int currentAscensionCount = PlayerDataManager.getAscensionCount(player);
         int prestigeReward = AscendancyMod.getPrestigeReward(currentAscensionCount);
         
-        AscendancyMod.LOGGER.info("Player {} beginning rebirth from {} (Ascension #{}, +{} pts)", 
-            player.getName().getString(), oldPos, currentAscensionCount + 1, prestigeReward);
+        // v2.5 - Check for bonus prestige from Soul's Craving
+        int cravingBonus = SoulCravingManager.getBonusPrestige(player);
+        
+        // v2.5 - Check for bonus from Achievements
+        int achievementBonus = (int) AchievementManager.getTotalBonus(player, "prestige");
+        
+        // v2.5 - Record Chronicle entry for ascension
+        ChronicleManager.recordEvent(player, "ascension", 
+            "Ascended from life #" + (currentAscensionCount + 1) + " with " + prestigeReward + " prestige earned.");
+        
+        // v2.5 - Save Chronicle before new life
+        ChronicleManager.saveToHistory(player);
+        
+        // v2.5 - Update Achievement progress
+        AchievementManager.addProgress(player, AchievementManager.Achievement.FIRST_ASCENSION, 1);
+        AchievementManager.addProgress(player, AchievementManager.Achievement.VETERAN, 1);
+        AchievementManager.addProgress(player, AchievementManager.Achievement.LEGEND, 1);
+        AchievementManager.addProgress(player, AchievementManager.Achievement.ETERNAL, 1);
+        
+        AscendancyMod.LOGGER.info("Player {} beginning rebirth from {} (Ascension #{}, +{} pts, craving bonus: {}, achievement bonus: {})", 
+            player.getName().getString(), oldPos, currentAscensionCount + 1, prestigeReward, cravingBonus, achievementBonus);
         
         // 1. SAVE CHOSEN ITEM (with amount limit based on Keeper level)
         ItemStack keptItem = ItemStack.EMPTY;
@@ -129,6 +146,29 @@ public class AscensionManager {
         
         // 10. RESET FOR ASCENSION (handles count increment and prestige points)
         PlayerDataManager.resetForAscension(player);
+        
+        // v2.5 - Add bonus prestige from craving and achievements
+        if (cravingBonus > 0 || achievementBonus > 0) {
+            int totalBonus = cravingBonus + achievementBonus;
+            PlayerDataManager.addPrestigePoints(player, totalBonus);
+            if (cravingBonus > 0) {
+                AscendancyMod.LOGGER.info("Player {} earned {} bonus prestige from Soul's Craving", 
+                    player.getName().getString(), cravingBonus);
+            }
+            if (achievementBonus > 0) {
+                AscendancyMod.LOGGER.info("Player {} earned {} bonus prestige from Achievements", 
+                    player.getName().getString(), achievementBonus);
+            }
+        }
+        
+        // v2.5 - Generate new Soul's Craving for this life
+        SoulCravingManager.generateNewCraving(player);
+        
+        // v2.5 - Start new Chronicle life
+        ChronicleManager.onNewLife(player);
+        
+        // v2.5 - Restore bonded pets from previous life
+        AncestralBondManager.restorePets(player);
         
         // 11. SYNC DATA - no chat notification during loading screen
         AscendancyNetworking.syncToClient(player);
